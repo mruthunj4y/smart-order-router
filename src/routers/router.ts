@@ -4,22 +4,25 @@ import {
   MixedRouteSDK,
   Protocol,
   Trade,
-} from '@surge/router-sdk';
+} from '@uniswap/router-sdk';
 import {
   Currency,
   Fraction,
   Percent,
   Token,
   TradeType,
-} from '@surge/sdk-core';
-import { Route as V2RouteRaw } from '@surge/v2-sdk';
+} from '@uniswap/sdk-core';
 import {
+  SwapOptions as UniversalRouterSwapOptions,
+  UniversalRouterVersion,
+} from '@uniswap/universal-router-sdk';
+import { Route as V2RouteRaw } from '@uniswap/v2-sdk';
+import {
+  MethodParameters as SDKMethodParameters,
   Pool,
   Position,
-  MethodParameters as SDKMethodParameters,
   Route as V3RouteRaw,
-} from '@surge/v3-sdk';
-import { SwapOptions as UniversalRouterSwapOptions } from '@uniswap/universal-router-sdk';
+} from '@uniswap/v3-sdk';
 
 import { SimulationStatus } from '../providers';
 import { CurrencyAmount } from '../util/amounts';
@@ -32,9 +35,10 @@ export class V3Route extends V3RouteRaw<Token, Token> {
 export class V2Route extends V2RouteRaw<Token, Token> {
   protocol: Protocol.V2 = Protocol.V2;
 }
-export class MixedRoute extends MixedRouteSDK<Token, Token> {
+export class MixedRoute extends MixedRouteSDK<Currency, Currency> {
   protocol: Protocol.MIXED = Protocol.MIXED;
 }
+export type SupportedRoutes = V3Route | V2Route | MixedRoute;
 
 export type SwapRoute = {
   /**
@@ -51,6 +55,14 @@ export type SwapRoute = {
    */
   quoteGasAdjusted: CurrencyAmount;
   /**
+   * The quote adjusted for the estimated gas used by the swap as well as the portion amount, if applicable.
+   * This is computed by estimating the amount of gas used by the swap, converting
+   * this estimate to be in terms of the quote token, and subtracting that from the quote.
+   * Then it uses the IPortionProvider.getPortionAdjustedQuote method to adjust the quote for the portion amount.
+   * i.e. quoteGasAdjusted = quote - estimatedGasUsedQuoteToken - portionAmount
+   */
+  quoteGasAndPortionAdjusted?: CurrencyAmount;
+  /**
    * The estimate of the gas used by the swap.
    */
   estimatedGasUsed: BigNumber;
@@ -63,6 +75,11 @@ export type SwapRoute = {
    */
   estimatedGasUsedUSD: CurrencyAmount;
   /**
+   * The estimate of the gas used by the swap in terms of the gas token if specified.
+   * will be undefined if no gas token is specified in the AlphaRouter config
+   */
+  estimatedGasUsedGasToken?: CurrencyAmount;
+  /*
    * The gas price used when computing quoteGasAdjusted, estimatedGasUsedQuoteToken, etc.
    */
   gasPriceWei: BigNumber;
@@ -89,6 +106,15 @@ export type SwapRoute = {
    * 2 if simulation was successful (simulated gas estimates are returned)
    */
   simulationStatus?: SimulationStatus;
+  /**
+   * Used internally within routing-api to see how many route requests
+   * hit the cached routes. This is used further down the line for future perf optimizations.
+   */
+  hitsCachedRoute?: boolean;
+  /**
+   * Portion amount either echoed from upstream routing-api for exact out or calculated from portionBips for exact in
+   */
+  portionAmount?: CurrencyAmount;
 };
 
 export type MethodParameters = SDKMethodParameters & { to: string };
@@ -131,6 +157,7 @@ export enum SwapType {
 // Swap options for Universal Router and Permit2.
 export type SwapOptionsUniversalRouter = UniversalRouterSwapOptions & {
   type: SwapType.UNIVERSAL_ROUTER;
+  version: UniversalRouterVersion;
   simulate?: { fromAddress: string };
 };
 

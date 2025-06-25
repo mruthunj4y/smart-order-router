@@ -1,53 +1,71 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { Token } from '@uniswap/sdk-core';
+import {
+  ChainId,
+  CurrencyAmount as CurrencyAmountRaw,
+  Token,
+} from '@uniswap/sdk-core';
+import { Pair } from '@uniswap/v2-sdk';
+import { Pool } from '@uniswap/v3-sdk';
 
+import { ProviderConfig } from '../../../providers/provider';
 import {
   CUSD_CELO,
   CUSD_CELO_ALFAJORES,
   DAI_ARBITRUM,
-  DAI_ARBITRUM_RINKEBY,
-  DAI_BSC,
-  DAI_GÖRLI,
-  DAI_KOVAN,
+  DAI_AVAX,
+  DAI_BNB,
+  DAI_GOERLI,
   DAI_MAINNET,
   DAI_OPTIMISM,
-  DAI_OPTIMISTIC_KOVAN,
+  DAI_OPTIMISM_GOERLI,
+  DAI_OPTIMISM_SEPOLIA,
   DAI_POLYGON_MUMBAI,
-  DAI_RINKEBY_1,
-  DAI_RINKEBY_2,
-  DAI_ROPSTEN,
+  DAI_SEPOLIA,
+  DAI_ZKSYNC,
+  USDB_BLAST,
+  USDCE_ZKSYNC,
   USDC_ARBITRUM,
   USDC_ARBITRUM_GOERLI,
-  USDC_BSC,
+  USDC_ARBITRUM_SEPOLIA,
+  USDC_AVAX,
+  USDC_BASE,
+  USDC_BNB,
+  USDC_BRIDGED_AVAX,
+  USDC_CELO,
   USDC_ETHEREUM_GNOSIS,
-  USDC_GÖRLI,
-  USDC_KOVAN,
+  USDC_GOERLI,
   USDC_MAINNET,
   USDC_MOONBEAM,
+  USDC_NATIVE_ARBITRUM,
+  USDC_NATIVE_AVAX,
+  USDC_NATIVE_BASE,
+  USDC_NATIVE_CELO,
+  USDC_NATIVE_OPTIMISM,
+  USDC_NATIVE_POLYGON,
   USDC_OPTIMISM,
-  USDC_OPTIMISTIC_KOVAN,
+  USDC_OPTIMISM_GOERLI,
+  USDC_OPTIMISM_SEPOLIA,
   USDC_POLYGON,
-  USDC_ROPSTEN,
+  USDC_SEPOLIA,
+  USDC_WORMHOLE_CELO,
+  USDC_ZKSYNC,
+  USDC_ZORA,
   USDT_ARBITRUM,
-  USDT_ARBITRUM_RINKEBY,
-  USDT_BSC,
-  USDT_GÖRLI,
-  USDT_KOVAN,
+  USDT_BNB,
+  USDT_GOERLI,
   USDT_MAINNET,
   USDT_OPTIMISM,
-  USDT_OPTIMISTIC_KOVAN,
-  USDT_ROPSTEN,
-  WBTC_GÖRLI,
+  USDT_OPTIMISM_GOERLI,
+  USDT_OPTIMISM_SEPOLIA,
+  WBTC_GOERLI,
 } from '../../../providers/token-provider';
 import { IV2PoolProvider } from '../../../providers/v2/pool-provider';
 import {
   ArbitrumGasData,
   IL2GasDataProvider,
-  OptimismGasData,
 } from '../../../providers/v3/gas-data-provider';
-import { IV3PoolProvider } from '../../../providers/v3/pool-provider';
+import { WRAPPED_NATIVE_CURRENCY } from '../../../util';
 import { CurrencyAmount } from '../../../util/amounts';
-import { ChainId } from '../../../util/chains';
 import {
   MixedRouteWithValidQuote,
   RouteWithValidQuote,
@@ -55,46 +73,81 @@ import {
   V3RouteWithValidQuote,
 } from '../entities/route-with-valid-quote';
 
+// When adding new usd gas tokens, ensure the tokens are ordered
+// from tokens with highest decimals to lowest decimals. For example,
+// DAI_AVAX has 18 decimals and comes before USDC_AVAX which has 6 decimals.
 export const usdGasTokensByChain: { [chainId in ChainId]?: Token[] } = {
   [ChainId.MAINNET]: [DAI_MAINNET, USDC_MAINNET, USDT_MAINNET],
-  [ChainId.RINKEBY]: [DAI_RINKEBY_1, DAI_RINKEBY_2],
-  [ChainId.ARBITRUM_ONE]: [DAI_ARBITRUM, USDC_ARBITRUM, USDT_ARBITRUM],
-  [ChainId.OPTIMISM]: [DAI_OPTIMISM, USDC_OPTIMISM, USDT_OPTIMISM],
-  [ChainId.OPTIMISTIC_KOVAN]: [
-    DAI_OPTIMISTIC_KOVAN,
-    USDC_OPTIMISTIC_KOVAN,
-    USDT_OPTIMISTIC_KOVAN,
+  [ChainId.ARBITRUM_ONE]: [
+    DAI_ARBITRUM,
+    USDC_ARBITRUM,
+    USDC_NATIVE_ARBITRUM,
+    USDT_ARBITRUM,
   ],
-  [ChainId.ARBITRUM_RINKEBY]: [DAI_ARBITRUM_RINKEBY, USDT_ARBITRUM_RINKEBY],
+  [ChainId.OPTIMISM]: [
+    DAI_OPTIMISM,
+    USDC_OPTIMISM,
+    USDC_NATIVE_OPTIMISM,
+    USDT_OPTIMISM,
+  ],
+  [ChainId.OPTIMISM_GOERLI]: [
+    DAI_OPTIMISM_GOERLI,
+    USDC_OPTIMISM_GOERLI,
+    USDT_OPTIMISM_GOERLI,
+  ],
+  [ChainId.OPTIMISM_SEPOLIA]: [
+    DAI_OPTIMISM_SEPOLIA,
+    USDC_OPTIMISM_SEPOLIA,
+    USDT_OPTIMISM_SEPOLIA,
+  ],
   [ChainId.ARBITRUM_GOERLI]: [USDC_ARBITRUM_GOERLI],
-  [ChainId.KOVAN]: [DAI_KOVAN, USDC_KOVAN, USDT_KOVAN],
-  [ChainId.GÖRLI]: [DAI_GÖRLI, USDC_GÖRLI, USDT_GÖRLI, WBTC_GÖRLI],
-  [ChainId.ROPSTEN]: [DAI_ROPSTEN, USDC_ROPSTEN, USDT_ROPSTEN],
-  [ChainId.POLYGON]: [USDC_POLYGON],
+  [ChainId.ARBITRUM_SEPOLIA]: [USDC_ARBITRUM_SEPOLIA],
+  [ChainId.GOERLI]: [DAI_GOERLI, USDC_GOERLI, USDT_GOERLI, WBTC_GOERLI],
+  [ChainId.SEPOLIA]: [USDC_SEPOLIA, DAI_SEPOLIA],
+  [ChainId.POLYGON]: [USDC_POLYGON, USDC_NATIVE_POLYGON],
   [ChainId.POLYGON_MUMBAI]: [DAI_POLYGON_MUMBAI],
-  [ChainId.CELO]: [CUSD_CELO],
+  [ChainId.CELO]: [CUSD_CELO, USDC_CELO, USDC_NATIVE_CELO, USDC_WORMHOLE_CELO],
   [ChainId.CELO_ALFAJORES]: [CUSD_CELO_ALFAJORES],
   [ChainId.GNOSIS]: [USDC_ETHEREUM_GNOSIS],
   [ChainId.MOONBEAM]: [USDC_MOONBEAM],
-  [ChainId.BSC]: [USDT_BSC, USDC_BSC, DAI_BSC],
+  [ChainId.BNB]: [USDT_BNB, USDC_BNB, DAI_BNB],
+  [ChainId.AVALANCHE]: [
+    DAI_AVAX,
+    USDC_AVAX,
+    USDC_NATIVE_AVAX,
+    USDC_BRIDGED_AVAX,
+  ],
+  [ChainId.BASE]: [USDC_BASE, USDC_NATIVE_BASE],
+  [ChainId.BLAST]: [USDB_BLAST],
+  [ChainId.ZORA]: [USDC_ZORA],
+  [ChainId.ZKSYNC]: [DAI_ZKSYNC, USDCE_ZKSYNC, USDC_ZKSYNC],
 };
 
 export type L1ToL2GasCosts = {
   gasUsedL1: BigNumber;
+  gasUsedL1OnL2: BigNumber;
   gasCostL1USD: CurrencyAmount;
   gasCostL1QuoteToken: CurrencyAmount;
+};
+
+export type GasModelProviderConfig = ProviderConfig & {
+  /*
+   * Any additional overhead to add to the gas estimate
+   */
+  additionalGasOverhead?: BigNumber;
+
+  gasToken?: Token;
 };
 
 export type BuildOnChainGasModelFactoryType = {
   chainId: ChainId;
   gasPriceWei: BigNumber;
-  v3poolProvider: IV3PoolProvider;
+  pools: LiquidityCalculationPools;
   amountToken: Token;
   quoteToken: Token;
   v2poolProvider: IV2PoolProvider;
-  l2GasDataProvider?:
-    | IL2GasDataProvider<OptimismGasData>
-    | IL2GasDataProvider<ArbitrumGasData>;
+  l2GasDataProvider?: IL2GasDataProvider<ArbitrumGasData>;
+  providerConfig?: GasModelProviderConfig;
 };
 
 export type BuildV2GasModelFactoryType = {
@@ -102,6 +155,21 @@ export type BuildV2GasModelFactoryType = {
   gasPriceWei: BigNumber;
   poolProvider: IV2PoolProvider;
   token: Token;
+  l2GasDataProvider?: IL2GasDataProvider<ArbitrumGasData>;
+  providerConfig?: GasModelProviderConfig;
+};
+
+export type LiquidityCalculationPools = {
+  usdPool: Pool;
+  nativeAndQuoteTokenV3Pool: Pool | null;
+  nativeAndAmountTokenV3Pool: Pool | null;
+  nativeAndSpecifiedGasTokenV3Pool: Pool | null;
+};
+
+export type GasModelType = {
+  v2GasModel?: IGasModel<V2RouteWithValidQuote>;
+  v3GasModel: IGasModel<V3RouteWithValidQuote>;
+  mixedRouteGasModel: IGasModel<MixedRouteWithValidQuote>;
 };
 
 /**
@@ -125,6 +193,7 @@ export type IGasModel<TRouteWithValidQuote extends RouteWithValidQuote> = {
     gasEstimate: BigNumber;
     gasCostInToken: CurrencyAmount;
     gasCostInUSD: CurrencyAmount;
+    gasCostInGasToken?: CurrencyAmount;
   };
   calculateL1GasFees?(routes: TRouteWithValidQuote[]): Promise<L1ToL2GasCosts>;
 };
@@ -146,6 +215,7 @@ export abstract class IV2GasModelFactory {
     gasPriceWei,
     poolProvider,
     token,
+    providerConfig,
   }: BuildV2GasModelFactoryType): Promise<IGasModel<V2RouteWithValidQuote>>;
 }
 
@@ -160,16 +230,51 @@ export abstract class IV2GasModelFactory {
  * @abstract
  * @class IOnChainGasModelFactory
  */
-export abstract class IOnChainGasModelFactory {
+export abstract class IOnChainGasModelFactory<
+  TRouteWithValidQuote extends RouteWithValidQuote
+> {
   public abstract buildGasModel({
     chainId,
     gasPriceWei,
-    v3poolProvider: V3poolProvider,
+    pools,
     amountToken,
     quoteToken,
-    v2poolProvider: V2poolProvider,
+    v2poolProvider,
     l2GasDataProvider,
-  }: BuildOnChainGasModelFactoryType): Promise<
-    IGasModel<V3RouteWithValidQuote | MixedRouteWithValidQuote>
-  >;
+    providerConfig,
+  }: BuildOnChainGasModelFactoryType): Promise<IGasModel<TRouteWithValidQuote>>;
+
+  protected totalInitializedTicksCrossed(
+    initializedTicksCrossedList: number[]
+  ) {
+    let ticksCrossed = 0;
+    for (let i = 0; i < initializedTicksCrossedList.length; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      if (initializedTicksCrossedList[i]! > 0) {
+        // Quoter returns Array<number of calls to crossTick + 1>, so we need to subtract 1 here.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ticksCrossed += initializedTicksCrossedList[i]! - 1;
+      }
+    }
+
+    return ticksCrossed;
+  }
 }
+
+// Determines if native currency is token0
+// Gets the native price of the pool, dependent on 0 or 1
+// quotes across the pool
+export const getQuoteThroughNativePool = (
+  chainId: ChainId,
+  nativeTokenAmount: CurrencyAmountRaw<Token>,
+  nativeTokenPool: Pool | Pair
+): CurrencyAmount => {
+  const nativeCurrency = WRAPPED_NATIVE_CURRENCY[chainId];
+  const isToken0 = nativeTokenPool.token0.equals(nativeCurrency);
+  // returns mid price in terms of the native currency (the ratio of token/nativeToken)
+  const nativeTokenPrice = isToken0
+    ? nativeTokenPool.token0Price
+    : nativeTokenPool.token1Price;
+  // return gas cost in terms of the non native currency
+  return nativeTokenPrice.quote(nativeTokenAmount) as CurrencyAmount;
+};

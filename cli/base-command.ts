@@ -4,7 +4,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { Command, flags } from '@oclif/command';
 import { ParserOutput } from '@oclif/parser/lib/parse';
 import DEFAULT_TOKEN_LIST from '@uniswap/default-token-list';
-import { Currency, CurrencyAmount, Token } from '@uniswap/sdk-core';
+import { ChainId, Currency, CurrencyAmount, Token } from '@uniswap/sdk-core';
 import { MethodParameters } from '@uniswap/v3-sdk';
 import bunyan, { default as Logger } from 'bunyan';
 import bunyanDebugStream from 'bunyan-debug-stream';
@@ -17,7 +17,6 @@ import {
   CachingTokenListProvider,
   CachingTokenProviderWithFallback,
   CachingV3PoolProvider,
-  ChainId,
   CHAIN_IDS_LIST,
   EIP1559GasPriceProvider,
   EthEstimateGasSimulator,
@@ -40,14 +39,21 @@ import {
   setGlobalMetric,
   SimulationStatus,
   TenderlySimulator,
+  TokenPropertiesProvider,
   TokenProvider,
   UniswapMulticallProvider,
   V2PoolProvider,
   V3PoolProvider,
   V3RouteWithValidQuote,
 } from '../src';
-import { LegacyGasPriceProvider } from '../src/providers/legacy-gas-price-provider';
-import { OnChainGasPriceProvider } from '../src/providers/on-chain-gas-price-provider';
+import {
+  LegacyGasPriceProvider
+} from '../src/providers/legacy-gas-price-provider';
+import {
+  OnChainGasPriceProvider
+} from '../src/providers/on-chain-gas-price-provider';
+import { PortionProvider } from '../src/providers/portion-provider';
+import { OnChainTokenFeeFetcher } from '../src/providers/token-fee-fetcher';
 
 export abstract class BaseCommand extends Command {
   static flags = {
@@ -61,7 +67,11 @@ export abstract class BaseCommand extends Command {
     }),
     topNSecondHop: flags.integer({
       required: false,
-      default: 0,
+      default: 2,
+    }),
+    topNSecondHopForTokenAddressRaw: flags.string({
+      required: false,
+      default: '',
     }),
     topNWithEachBaseToken: flags.integer({
       required: false,
@@ -125,8 +135,8 @@ export abstract class BaseCommand extends Command {
     return this._log
       ? this._log
       : bunyan.createLogger({
-          name: 'Default Logger',
-        });
+        name: 'Default Logger',
+      });
   }
 
   get router() {
@@ -196,19 +206,19 @@ export abstract class BaseCommand extends Command {
       streams: debugJSON
         ? undefined
         : [
-            {
-              level: logLevel,
-              type: 'stream',
-              stream: bunyanDebugStream({
-                basepath: __dirname,
-                forceColor: false,
-                showDate: false,
-                showPid: false,
-                showLoggerName: false,
-                showLevel: !!debug,
-              }),
-            },
-          ],
+          {
+            level: logLevel,
+            type: 'stream',
+            stream: bunyanDebugStream({
+              basepath: __dirname,
+              forceColor: false,
+              showDate: false,
+              showPid: false,
+              showLoggerName: false,
+              showLevel: !!debug,
+            }),
+          },
+        ],
     });
 
     if (debug || debugJSON) {
@@ -275,39 +285,52 @@ export abstract class BaseCommand extends Command {
       const gasPriceCache = new NodeJSCache<GasPrice>(
         new NodeCache({ stdTTL: 15, useClones: true })
       );
-
-      // const useDefaultQuoteProvider =
-      //   chainId != ChainId.ARBITRUM_ONE && chainId != ChainId.ARBITRUM_RINKEBY;
-
       const v3PoolProvider = new CachingV3PoolProvider(
         chainId,
         new V3PoolProvider(chainId, multicall2Provider),
         new NodeJSCache(new NodeCache({ stdTTL: 360, useClones: false }))
       );
-      const v2PoolProvider = new V2PoolProvider(chainId, multicall2Provider);
+      const tokenFeeFetcher = new OnChainTokenFeeFetcher(
+        chainId,
+        provider
+      )
+      const tokenPropertiesProvider = new TokenPropertiesProvider(
+        chainId,
+        new NodeJSCache(new NodeCache({ stdTTL: 360, useClones: false })),
+        tokenFeeFetcher
+      )
+      const v2PoolProvider = new V2PoolProvider(chainId, multicall2Provider, tokenPropertiesProvider);
 
+      const portionProvider = new PortionProvider();
       const tenderlySimulator = new TenderlySimulator(
         chainId,
-        'http://api.tenderly.co',
+        'https://api.tenderly.co',
         process.env.TENDERLY_USER!,
         process.env.TENDERLY_PROJECT!,
         process.env.TENDERLY_ACCESS_KEY!,
+        process.env.TENDERLY_NODE_API_KEY!,
         v2PoolProvider,
         v3PoolProvider,
         provider,
-        { [ChainId.ARBITRUM_ONE]: 1 }
+        portionProvider,
+        { [ChainId.ARBITRUM_ONE]: 1 },
+        5000,
+        100,
+        [ChainId.MAINNET]
       );
 
       const ethEstimateGasSimulator = new EthEstimateGasSimulator(
         chainId,
         provider,
         v2PoolProvider,
-        v3PoolProvider
+        v3PoolProvider,
+        portionProvider
       );
 
       const simulator = new FallbackTenderlySimulator(
         chainId,
         provider,
+        portionProvider,
         tenderlySimulator,
         ethEstimateGasSimulator
       );
@@ -339,11 +362,12 @@ export abstract class BaseCommand extends Command {
     quoteGasAdjusted: CurrencyAmount<Currency>,
     estimatedGasUsedQuoteToken: CurrencyAmount<Currency>,
     estimatedGasUsedUSD: CurrencyAmount<Currency>,
+    estimatedGasUsedGasToken: CurrencyAmount<Currency> | undefined,
     methodParameters: MethodParameters | undefined,
     blockNumber: BigNumber,
     estimatedGasUsed: BigNumber,
     gasPriceWei: BigNumber,
-    simulationStatus?: SimulationStatus
+    simulationStatus?: SimulationStatus,
   ) {
     this.logger.info(`Best Route:`);
     this.logger.info(`${routeAmountsToString(routeAmounts)}`);
@@ -369,6 +393,13 @@ export abstract class BaseCommand extends Command {
         Math.min(estimatedGasUsedUSD.currency.decimals, 6)
       )}`
     );
+    if(estimatedGasUsedGasToken) {
+      this.logger.info(
+        `Gas Used gas token: ${estimatedGasUsedGasToken.toFixed(
+          Math.min(estimatedGasUsedGasToken.currency.decimals, 6)
+        )}`
+      );
+    }
     this.logger.info(`Calldata: ${methodParameters?.calldata}`);
     this.logger.info(`Value: ${methodParameters?.value}`);
     this.logger.info({

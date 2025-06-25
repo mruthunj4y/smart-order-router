@@ -1,12 +1,11 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { Fraction, TradeType } from '@uniswap/sdk-core';
+import { ChainId, Fraction, TradeType } from '@uniswap/sdk-core';
 import { Pair } from '@uniswap/v2-sdk';
 import { Pool } from '@uniswap/v3-sdk';
 import JSBI from 'jsbi';
 import _ from 'lodash';
 import sinon from 'sinon';
 import {
-  ChainId,
   CurrencyAmount,
   DAI_MAINNET,
   IGasModel,
@@ -19,6 +18,7 @@ import {
   V3RouteWithValidQuote,
   WRAPPED_NATIVE_CURRENCY,
 } from '../../../../../src';
+import { IPortionProvider, PortionProvider } from '../../../../../src/providers/portion-provider';
 import { V2PoolProvider } from '../../../../../src/providers/v2/pool-provider';
 import { getBestSwapRoute } from '../../../../../src/routers/alpha-router/functions/best-swap-route';
 import {
@@ -92,6 +92,7 @@ describe('get best swap route', () => {
   let mockV2GasModel: sinon.SinonStubbedInstance<
     IGasModel<V2RouteWithValidQuote>
   >;
+  let portionProvider: IPortionProvider;
 
   beforeEach(() => {
     mockPoolProvider = sinon.createStubInstance(V3PoolProvider);
@@ -147,6 +148,7 @@ describe('get best swap route', () => {
         gasCostInUSD: CurrencyAmount.fromRawAmount(USDC, 0),
       };
     });
+    portionProvider = new PortionProvider();
   });
 
   const buildV3RouteWithValidQuote = (
@@ -263,7 +265,8 @@ describe('get best swap route', () => {
       routesWithQuotes,
       TradeType.EXACT_INPUT,
       ChainId.MAINNET,
-      { ...mockRoutingConfig, distributionPercent: 25 }
+      { ...mockRoutingConfig, distributionPercent: 25 },
+      portionProvider
     )!;
 
     const {
@@ -323,7 +326,8 @@ describe('get best swap route', () => {
       routesWithQuotes,
       TradeType.EXACT_INPUT,
       ChainId.MAINNET,
-      { ...mockRoutingConfig, distributionPercent: 25 }
+      { ...mockRoutingConfig, distributionPercent: 25 },
+      portionProvider
     )!;
 
     const {
@@ -383,7 +387,8 @@ describe('get best swap route', () => {
       routesWithQuotes,
       TradeType.EXACT_INPUT,
       ChainId.MAINNET,
-      { ...mockRoutingConfig, distributionPercent: 25 }
+      { ...mockRoutingConfig, distributionPercent: 25 },
+      portionProvider
     )!;
 
     const {
@@ -450,7 +455,8 @@ describe('get best swap route', () => {
       routesWithQuotes,
       TradeType.EXACT_INPUT,
       ChainId.MAINNET,
-      { ...mockRoutingConfig, distributionPercent: 25 }
+      { ...mockRoutingConfig, distributionPercent: 25 },
+      portionProvider
     )!;
 
     const {
@@ -519,7 +525,8 @@ describe('get best swap route', () => {
       routesWithQuotes,
       TradeType.EXACT_INPUT,
       ChainId.MAINNET,
-      { ...mockRoutingConfig, distributionPercent: 25 }
+      { ...mockRoutingConfig, distributionPercent: 25 },
+      portionProvider
     )!;
 
     const {
@@ -587,7 +594,8 @@ describe('get best swap route', () => {
       routesWithQuotes,
       TradeType.EXACT_INPUT,
       ChainId.MAINNET,
-      { ...mockRoutingConfig, distributionPercent: 25 }
+      { ...mockRoutingConfig, distributionPercent: 25 },
+      portionProvider
     )!;
 
     const {
@@ -660,7 +668,8 @@ describe('get best swap route', () => {
         distributionPercent: 25,
         minSplits: 2,
         maxSplits: 3,
-      }
+      },
+      portionProvider
     )!;
 
     const {
@@ -732,7 +741,8 @@ describe('get best swap route', () => {
       routesWithQuotes,
       TradeType.EXACT_INPUT,
       ChainId.MAINNET,
-      { ...mockRoutingConfig, distributionPercent: 25 }
+      { ...mockRoutingConfig, distributionPercent: 25 },
+      portionProvider
     )!;
 
     const {
@@ -803,7 +813,8 @@ describe('get best swap route', () => {
       routesWithQuotes,
       TradeType.EXACT_INPUT,
       ChainId.MAINNET,
-      { ...mockRoutingConfig, distributionPercent: 25 }
+      { ...mockRoutingConfig, distributionPercent: 25 },
+      portionProvider
     )!;
 
     const {

@@ -3,25 +3,24 @@ import {
   Protocol,
   SwapRouter as SwapRouter02,
   Trade,
-} from '@surge/router-sdk';
-import { Currency, TradeType } from '@surge/sdk-core';
-import { Route as V2RouteRaw } from '@surge/v2-sdk';
-import { Route as V3RouteRaw } from '@surge/v3-sdk';
+} from '@uniswap/router-sdk';
+import { ChainId, Currency, TradeType } from '@uniswap/sdk-core';
 import {
-  SwapRouter as UniveralRouter,
+  SwapRouter as UniversalRouter,
   UNIVERSAL_ROUTER_ADDRESS,
 } from '@uniswap/universal-router-sdk';
+import { Route as V2RouteRaw } from '@uniswap/v2-sdk';
+import { Route as V3RouteRaw } from '@uniswap/v3-sdk';
 import _ from 'lodash';
 
 import {
-  ChainId,
   CurrencyAmount,
   MethodParameters,
   MixedRouteWithValidQuote,
   RouteWithValidQuote,
-  SWAP_ROUTER_02_ADDRESSES,
   SwapOptions,
   SwapType,
+  SWAP_ROUTER_02_ADDRESSES,
   V2RouteWithValidQuote,
   V3RouteWithValidQuote,
 } from '..';
@@ -224,7 +223,14 @@ export function buildTrade<TTradeType extends TradeType>(
     }
   );
 
-  const trade = new Trade({ v2Routes, v3Routes, mixedRoutes, tradeType });
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const trade = new Trade({
+    v2Routes,
+    v3Routes,
+    mixedRoutes,
+    tradeType,
+  });
 
   return trade;
 }
@@ -236,8 +242,8 @@ export function buildSwapMethodParameters(
 ): MethodParameters {
   if (swapConfig.type == SwapType.UNIVERSAL_ROUTER) {
     return {
-      ...UniveralRouter.swapERC20CallParameters(trade, swapConfig),
-      to: UNIVERSAL_ROUTER_ADDRESS(chainId),
+      ...UniversalRouter.swapERC20CallParameters(trade, swapConfig),
+      to: UNIVERSAL_ROUTER_ADDRESS(swapConfig.version, chainId),
     };
   } else if (swapConfig.type == SwapType.SWAP_ROUTER_02) {
     const { recipient, slippageTolerance, deadline, inputTokenPermit } =

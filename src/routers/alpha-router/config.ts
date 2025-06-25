@@ -1,6 +1,6 @@
-import { ChainId } from '../../util/chains';
+import { ChainId } from '@uniswap/sdk-core';
 
-import { AlphaRouterConfig } from './alpha-router';
+import { AlphaRouterConfig, LowerCaseStringArray } from './alpha-router';
 
 export const DEFAULT_ROUTING_CONFIG_BY_CHAIN = (
   chainId: ChainId
@@ -8,7 +8,11 @@ export const DEFAULT_ROUTING_CONFIG_BY_CHAIN = (
   switch (chainId) {
     // Optimism
     case ChainId.OPTIMISM:
-    case ChainId.OPTIMISTIC_KOVAN:
+    case ChainId.OPTIMISM_GOERLI:
+    case ChainId.OPTIMISM_SEPOLIA:
+    case ChainId.BASE:
+    case ChainId.BASE_GOERLI:
+    case ChainId.BLAST:
       return {
         v2PoolSelection: {
           topN: 3,
@@ -36,8 +40,8 @@ export const DEFAULT_ROUTING_CONFIG_BY_CHAIN = (
     // batch size and send more multicalls per quote. To reduce the amount of requests each quote sends, we
     // have to adjust the routing config so we explore fewer routes.
     case ChainId.ARBITRUM_ONE:
-    case ChainId.ARBITRUM_RINKEBY:
     case ChainId.ARBITRUM_GOERLI:
+    case ChainId.ARBITRUM_SEPOLIA:
     case ChainId.CELO:
     case ChainId.CELO_ALFAJORES:
       return {
@@ -70,6 +74,9 @@ export const DEFAULT_ROUTING_CONFIG_BY_CHAIN = (
           topNDirectSwaps: 1,
           topNTokenInOut: 5,
           topNSecondHop: 2,
+          tokensToAvoidOnSecondHops: new LowerCaseStringArray(
+            '0xd46ba6d942050d489dbd938a2c909a5d5039a161' // AMPL on Mainnet
+          ),
           topNWithEachBaseToken: 2,
           topNWithBaseToken: 6,
         },

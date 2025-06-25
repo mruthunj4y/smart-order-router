@@ -1,7 +1,5 @@
 {
-  "_format": "hh-sol-artifact-1",
   "contractName": "ERC20Capped",
-  "sourceName": "contracts/token/ERC20/extensions/ERC20Capped.sol",
   "abi": [
     {
       "anonymous": false,
@@ -237,7 +235,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "to",
+          "name": "recipient",
           "type": "address"
         },
         {
@@ -261,12 +259,12 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "from",
+          "name": "sender",
           "type": "address"
         },
         {
           "internalType": "address",
-          "name": "to",
+          "name": "recipient",
           "type": "address"
         },
         {

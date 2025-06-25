@@ -1,14 +1,22 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { Token } from '@uniswap/sdk-core';
+import { ChainId, Token } from '@uniswap/sdk-core';
 import { Pair } from '@uniswap/v2-sdk';
 import _ from 'lodash';
 
+import { BaseProvider } from '@ethersproject/providers';
+import { ProviderConfig } from '../../../../providers/provider';
 import { IV2PoolProvider } from '../../../../providers/v2/pool-provider';
-import { ChainId, log, WRAPPED_NATIVE_CURRENCY } from '../../../../util';
+import { log, WRAPPED_NATIVE_CURRENCY } from '../../../../util';
 import { CurrencyAmount } from '../../../../util/amounts';
+import {
+  calculateL1GasFeesHelper,
+  getV2NativePool,
+} from '../../../../util/gas-factory-helpers';
 import { V2RouteWithValidQuote } from '../../entities/route-with-valid-quote';
 import {
   BuildV2GasModelFactoryType,
+  GasModelProviderConfig,
+  getQuoteThroughNativePool,
   IGasModel,
   IV2GasModelFactory,
   usdGasTokensByChain,
@@ -38,8 +46,11 @@ export const COST_PER_EXTRA_HOP = BigNumber.from(50000); // 20000, bumped up by 
  * @class V2HeuristicGasModelFactory
  */
 export class V2HeuristicGasModelFactory extends IV2GasModelFactory {
-  constructor() {
+  private provider: BaseProvider;
+
+  constructor(provider: BaseProvider) {
     super();
+    this.provider = provider;
   }
 
   public async buildGasModel({
@@ -47,73 +58,122 @@ export class V2HeuristicGasModelFactory extends IV2GasModelFactory {
     gasPriceWei,
     poolProvider,
     token,
+    l2GasDataProvider,
+    providerConfig,
   }: BuildV2GasModelFactoryType): Promise<IGasModel<V2RouteWithValidQuote>> {
-    if (token.equals(WRAPPED_NATIVE_CURRENCY[chainId]!)) {
-      const usdPool: Pair = await this.getHighestLiquidityUSDPool(
+    const l2GasData = l2GasDataProvider
+      ? await l2GasDataProvider.getGasData(providerConfig)
+      : undefined;
+
+    const usdPoolPromise: Promise<Pair> = this.getHighestLiquidityUSDPool(
+      chainId,
+      poolProvider,
+      providerConfig
+    );
+
+    // Only fetch the native gasToken pool if specified by the config AND the gas token is not the native currency.
+    const nativeAndSpecifiedGasTokenPoolPromise =
+      providerConfig?.gasToken &&
+      !providerConfig?.gasToken.equals(WRAPPED_NATIVE_CURRENCY[chainId]!)
+        ? this.getEthPool(
+            chainId,
+            providerConfig.gasToken,
+            poolProvider,
+            providerConfig
+          )
+        : Promise.resolve(null);
+
+    const [usdPool, nativeAndSpecifiedGasTokenPool] = await Promise.all([
+      usdPoolPromise,
+      nativeAndSpecifiedGasTokenPoolPromise,
+    ]);
+
+    let ethPool: Pair | null = null;
+    if (!token.equals(WRAPPED_NATIVE_CURRENCY[chainId]!)) {
+      ethPool = await this.getEthPool(
         chainId,
-        poolProvider
+        token,
+        poolProvider,
+        providerConfig
       );
+    }
 
-      return {
-        estimateGasCost: (routeWithValidQuote: V2RouteWithValidQuote) => {
-          const { gasCostInEth, gasUse } = this.estimateGas(
-            routeWithValidQuote,
-            gasPriceWei,
-            chainId
+    const usdToken =
+      usdPool.token0.address == WRAPPED_NATIVE_CURRENCY[chainId]!.address
+        ? usdPool.token1
+        : usdPool.token0;
+
+    const calculateL1GasFees = async (
+      route: V2RouteWithValidQuote[]
+    ): Promise<{
+      gasUsedL1: BigNumber;
+      gasUsedL1OnL2: BigNumber;
+      gasCostL1USD: CurrencyAmount;
+      gasCostL1QuoteToken: CurrencyAmount;
+    }> => {
+      const nativePool = !token.equals(WRAPPED_NATIVE_CURRENCY[chainId])
+        ? await getV2NativePool(token, poolProvider, providerConfig)
+        : null;
+
+      return await calculateL1GasFeesHelper(
+        route,
+        chainId,
+        usdPool,
+        token,
+        nativePool,
+        this.provider,
+        l2GasData
+      );
+    };
+
+    return {
+      estimateGasCost: (routeWithValidQuote: V2RouteWithValidQuote) => {
+        const { gasCostInEth, gasUse } = this.estimateGas(
+          routeWithValidQuote,
+          gasPriceWei,
+          chainId,
+          providerConfig
+        );
+
+        /** ------ MARK: USD logic  -------- */
+        const gasCostInTermsOfUSD = getQuoteThroughNativePool(
+          chainId,
+          gasCostInEth,
+          usdPool
+        );
+
+        /** ------ MARK: Conditional logic run if gasToken is specified  -------- */
+        let gasCostInTermsOfGasToken: CurrencyAmount | undefined = undefined;
+        if (nativeAndSpecifiedGasTokenPool) {
+          gasCostInTermsOfGasToken = getQuoteThroughNativePool(
+            chainId,
+            gasCostInEth,
+            nativeAndSpecifiedGasTokenPool
           );
+        }
+        // if the gasToken is the native currency, we can just use the gasCostInEth
+        else if (
+          providerConfig?.gasToken?.equals(WRAPPED_NATIVE_CURRENCY[chainId]!)
+        ) {
+          gasCostInTermsOfGasToken = gasCostInEth;
+        }
 
-          const ethToken0 =
-            usdPool.token0.address == WRAPPED_NATIVE_CURRENCY[chainId]!.address;
-
-          const ethTokenPrice = ethToken0
-            ? usdPool.token0Price
-            : usdPool.token1Price;
-
-          const gasCostInTermsOfUSD: CurrencyAmount = ethTokenPrice.quote(
-            gasCostInEth
-          ) as CurrencyAmount;
-
+        /** ------ MARK: return early if quoteToken is wrapped native currency ------- */
+        if (token.equals(WRAPPED_NATIVE_CURRENCY[chainId]!)) {
           return {
             gasEstimate: gasUse,
             gasCostInToken: gasCostInEth,
             gasCostInUSD: gasCostInTermsOfUSD,
+            gasCostInGasToken: gasCostInTermsOfGasToken,
           };
-        },
-      };
-    }
+        }
 
-    // If the quote token is not WETH, we convert the gas cost to be in terms of the quote token.
-    // We do this by getting the highest liquidity <token>/ETH pool.
-    const ethPool: Pair | null = await this.getEthPool(
-      chainId,
-      token,
-      poolProvider
-    );
-    if (!ethPool) {
-      log.info(
-        'Unable to find ETH pool with the quote token to produce gas adjusted costs. Route will not account for gas.'
-      );
-    }
-
-    const usdPool: Pair = await this.getHighestLiquidityUSDPool(
-      chainId,
-      poolProvider
-    );
-
-    return {
-      estimateGasCost: (routeWithValidQuote: V2RouteWithValidQuote) => {
-        const usdToken =
-          usdPool.token0.address == WRAPPED_NATIVE_CURRENCY[chainId]!.address
-            ? usdPool.token1
-            : usdPool.token0;
-
-        const { gasCostInEth, gasUse } = this.estimateGas(
-          routeWithValidQuote,
-          gasPriceWei,
-          chainId
-        );
-
+        // If the quote token is not WETH, we convert the gas cost to be in terms of the quote token.
+        // We do this by getting the highest liquidity <token>/ETH pool.
         if (!ethPool) {
+          log.info(
+            'Unable to find ETH pool with the quote token to produce gas adjusted costs. Route will not account for gas.'
+          );
           return {
             gasEstimate: gasUse,
             gasCostInToken: CurrencyAmount.fromRawAmount(token, 0),
@@ -121,70 +181,35 @@ export class V2HeuristicGasModelFactory extends IV2GasModelFactory {
           };
         }
 
-        const ethToken0 =
-          ethPool.token0.address == WRAPPED_NATIVE_CURRENCY[chainId]!.address;
-
-        const ethTokenPrice = ethToken0
-          ? ethPool.token0Price
-          : ethPool.token1Price;
-
-        let gasCostInTermsOfQuoteToken: CurrencyAmount;
-        try {
-          gasCostInTermsOfQuoteToken = ethTokenPrice.quote(
-            gasCostInEth
-          ) as CurrencyAmount;
-        } catch (err) {
-          log.error(
-            {
-              ethTokenPriceBase: ethTokenPrice.baseCurrency,
-              ethTokenPriceQuote: ethTokenPrice.quoteCurrency,
-              gasCostInEth: gasCostInEth.currency,
-            },
-            'Debug eth price token issue'
-          );
-          throw err;
-        }
-
-        const ethToken0USDPool =
-          usdPool.token0.address == WRAPPED_NATIVE_CURRENCY[chainId]!.address;
-
-        const ethTokenPriceUSDPool = ethToken0USDPool
-          ? usdPool.token0Price
-          : usdPool.token1Price;
-
-        let gasCostInTermsOfUSD: CurrencyAmount;
-        try {
-          gasCostInTermsOfUSD = ethTokenPriceUSDPool.quote(
-            gasCostInEth
-          ) as CurrencyAmount;
-        } catch (err) {
-          log.error(
-            {
-              usdT1: usdPool.token0.symbol,
-              usdT2: usdPool.token1.symbol,
-              gasCostInEthToken: gasCostInEth.currency.symbol,
-            },
-            'Failed to compute USD gas price'
-          );
-          throw err;
-        }
+        const gasCostInTermsOfQuoteToken = getQuoteThroughNativePool(
+          chainId,
+          gasCostInEth,
+          ethPool
+        );
 
         return {
           gasEstimate: gasUse,
           gasCostInToken: gasCostInTermsOfQuoteToken,
           gasCostInUSD: gasCostInTermsOfUSD!,
+          gasCostInGasToken: gasCostInTermsOfGasToken,
         };
       },
+      calculateL1GasFees,
     };
   }
 
   private estimateGas(
     routeWithValidQuote: V2RouteWithValidQuote,
     gasPriceWei: BigNumber,
-    chainId: ChainId
+    chainId: ChainId,
+    providerConfig?: GasModelProviderConfig
   ) {
     const hops = routeWithValidQuote.route.pairs.length;
-    const gasUse = BASE_SWAP_COST.add(COST_PER_EXTRA_HOP.mul(hops - 1));
+    let gasUse = BASE_SWAP_COST.add(COST_PER_EXTRA_HOP.mul(hops - 1));
+
+    if (providerConfig?.additionalGasOverhead) {
+      gasUse = gasUse.add(providerConfig.additionalGasOverhead);
+    }
 
     const totalGasCostWei = gasPriceWei.mul(gasUse);
 
@@ -201,11 +226,15 @@ export class V2HeuristicGasModelFactory extends IV2GasModelFactory {
   private async getEthPool(
     chainId: ChainId,
     token: Token,
-    poolProvider: IV2PoolProvider
+    poolProvider: IV2PoolProvider,
+    providerConfig?: ProviderConfig
   ): Promise<Pair | null> {
     const weth = WRAPPED_NATIVE_CURRENCY[chainId]!;
 
-    const poolAccessor = await poolProvider.getPools([[weth, token]]);
+    const poolAccessor = await poolProvider.getPools(
+      [[weth, token]],
+      providerConfig
+    );
     const pool = poolAccessor.getPool(weth, token);
 
     if (!pool || pool.reserve0.equalTo(0) || pool.reserve1.equalTo(0)) {
@@ -227,7 +256,8 @@ export class V2HeuristicGasModelFactory extends IV2GasModelFactory {
 
   private async getHighestLiquidityUSDPool(
     chainId: ChainId,
-    poolProvider: IV2PoolProvider
+    poolProvider: IV2PoolProvider,
+    providerConfig?: ProviderConfig
   ): Promise<Pair> {
     const usdTokens = usdGasTokensByChain[chainId];
 
@@ -241,11 +271,16 @@ export class V2HeuristicGasModelFactory extends IV2GasModelFactory {
       usdToken,
       WRAPPED_NATIVE_CURRENCY[chainId]!,
     ]);
-    const poolAccessor = await poolProvider.getPools(usdPools);
+    const poolAccessor = await poolProvider.getPools(usdPools, providerConfig);
     const poolsRaw = poolAccessor.getAllPools();
     const pools = _.filter(
       poolsRaw,
-      (pool) => pool.reserve0.greaterThan(0) && pool.reserve1.greaterThan(0)
+      (pool) =>
+        pool.reserve0.greaterThan(0) &&
+        pool.reserve1.greaterThan(0) &&
+        // this case should never happen in production, but when we mock the pool provider it may return non native pairs
+        (pool.token0.equals(WRAPPED_NATIVE_CURRENCY[chainId]!) ||
+          pool.token1.equals(WRAPPED_NATIVE_CURRENCY[chainId]!))
     );
 
     if (pools.length == 0) {

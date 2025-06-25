@@ -1,22 +1,27 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Token } from '@uniswap/sdk-core';
+import { ChainId, Token } from '@uniswap/sdk-core';
 
 import {
-  BTC_BSC,
-  BUSD_BSC,
-  DAI_BSC,
+  BTC_BNB,
+  BUSD_BNB,
+  DAI_AVAX,
+  DAI_BNB,
   DAI_MAINNET,
   ITokenProvider,
-  USDC_BSC,
+  USDB_BLAST,
+  USDCE_ZKSYNC,
+  USDC_AVAX,
+  USDC_BASE,
+  USDC_BNB,
   USDC_MAINNET,
-  USDT_BSC,
+  USDC_ZKSYNC,
+  USDT_BNB,
   USDT_MAINNET,
   WBTC_MAINNET,
   WMATIC_POLYGON,
   WMATIC_POLYGON_MUMBAI,
-
 } from '../../providers/token-provider';
-import { ChainId, WRAPPED_NATIVE_CURRENCY } from '../../util/chains';
+import { WRAPPED_NATIVE_CURRENCY } from '../../util/chains';
 
 type ChainTokenList = {
   readonly [chainId in ChainId]: Token[];
@@ -33,20 +38,21 @@ export const BASES_TO_CHECK_TRADES_AGAINST = (
       USDT_MAINNET,
       WBTC_MAINNET,
     ],
-    [ChainId.ROPSTEN]: [WRAPPED_NATIVE_CURRENCY[ChainId.ROPSTEN]!],
-    [ChainId.RINKEBY]: [WRAPPED_NATIVE_CURRENCY[ChainId.RINKEBY]!],
-    [ChainId.GÖRLI]: [WRAPPED_NATIVE_CURRENCY[ChainId.GÖRLI]!],
-    [ChainId.KOVAN]: [WRAPPED_NATIVE_CURRENCY[ChainId.KOVAN]!],
+    [ChainId.GOERLI]: [WRAPPED_NATIVE_CURRENCY[ChainId.GOERLI]!],
+    [ChainId.SEPOLIA]: [WRAPPED_NATIVE_CURRENCY[ChainId.SEPOLIA]!],
     [ChainId.OPTIMISM]: [WRAPPED_NATIVE_CURRENCY[ChainId.OPTIMISM]!],
-    [ChainId.OPTIMISTIC_KOVAN]: [
-      WRAPPED_NATIVE_CURRENCY[ChainId.OPTIMISTIC_KOVAN]!,
+    [ChainId.OPTIMISM_GOERLI]: [
+      WRAPPED_NATIVE_CURRENCY[ChainId.OPTIMISM_GOERLI]!,
+    ],
+    [ChainId.OPTIMISM_SEPOLIA]: [
+      WRAPPED_NATIVE_CURRENCY[ChainId.OPTIMISM_SEPOLIA]!,
     ],
     [ChainId.ARBITRUM_ONE]: [WRAPPED_NATIVE_CURRENCY[ChainId.ARBITRUM_ONE]!],
-    [ChainId.ARBITRUM_RINKEBY]: [
-      WRAPPED_NATIVE_CURRENCY[ChainId.ARBITRUM_RINKEBY]!,
-    ],
     [ChainId.ARBITRUM_GOERLI]: [
       WRAPPED_NATIVE_CURRENCY[ChainId.ARBITRUM_GOERLI]!,
+    ],
+    [ChainId.ARBITRUM_SEPOLIA]: [
+      WRAPPED_NATIVE_CURRENCY[ChainId.ARBITRUM_SEPOLIA]!,
     ],
     [ChainId.POLYGON]: [WMATIC_POLYGON],
     [ChainId.POLYGON_MUMBAI]: [WMATIC_POLYGON_MUMBAI],
@@ -54,13 +60,29 @@ export const BASES_TO_CHECK_TRADES_AGAINST = (
     [ChainId.CELO_ALFAJORES]: [WRAPPED_NATIVE_CURRENCY[ChainId.CELO_ALFAJORES]],
     [ChainId.GNOSIS]: [WRAPPED_NATIVE_CURRENCY[ChainId.GNOSIS]],
     [ChainId.MOONBEAM]: [WRAPPED_NATIVE_CURRENCY[ChainId.MOONBEAM]],
-    [ChainId.BSC]: [
-      WRAPPED_NATIVE_CURRENCY[ChainId.BSC]!,
-      BUSD_BSC,
-      DAI_BSC,
-      USDC_BSC,
-      USDT_BSC,
-      BTC_BSC,
+    [ChainId.BNB]: [
+      WRAPPED_NATIVE_CURRENCY[ChainId.BNB]!,
+      BUSD_BNB,
+      DAI_BNB,
+      USDC_BNB,
+      USDT_BNB,
+      BTC_BNB,
+    ],
+    [ChainId.AVALANCHE]: [
+      WRAPPED_NATIVE_CURRENCY[ChainId.AVALANCHE]!,
+      USDC_AVAX,
+      DAI_AVAX,
+    ],
+    [ChainId.BASE]: [WRAPPED_NATIVE_CURRENCY[ChainId.BASE]!, USDC_BASE],
+    [ChainId.BASE_GOERLI]: [WRAPPED_NATIVE_CURRENCY[ChainId.BASE_GOERLI]!],
+    [ChainId.ZORA]: [WRAPPED_NATIVE_CURRENCY[ChainId.ZORA]!],
+    [ChainId.ZORA_SEPOLIA]: [WRAPPED_NATIVE_CURRENCY[ChainId.ZORA_SEPOLIA]!],
+    [ChainId.ROOTSTOCK]: [WRAPPED_NATIVE_CURRENCY[ChainId.ROOTSTOCK]!],
+    [ChainId.BLAST]: [WRAPPED_NATIVE_CURRENCY[ChainId.BLAST]!, USDB_BLAST],
+    [ChainId.ZKSYNC]: [
+      WRAPPED_NATIVE_CURRENCY[ChainId.ZKSYNC]!,
+      USDCE_ZKSYNC,
+      USDC_ZKSYNC,
     ],
   };
 };

@@ -1,43 +1,64 @@
 import { BigNumber } from '@ethersproject/bignumber';
 import { JsonRpcProvider } from '@ethersproject/providers';
+import { ChainId } from '@uniswap/sdk-core';
 
-import { SwapOptions, SwapRoute, SwapType } from '../routers';
-import { ChainId, log } from '../util';
+import {
+  GasModelProviderConfig,
+  SwapOptions,
+  SwapRoute,
+  SwapType,
+} from '../routers';
+import { BEACON_CHAIN_DEPOSIT_ADDRESS, log } from '../util';
 import {
   calculateGasUsed,
   initSwapRouteFromExisting,
 } from '../util/gas-factory-helpers';
 
+import { IPortionProvider } from './portion-provider';
 import { ProviderConfig } from './provider';
 import { SimulationStatus, Simulator } from './simulation-provider';
 import { IV2PoolProvider } from './v2/pool-provider';
-import { ArbitrumGasData, OptimismGasData } from './v3/gas-data-provider';
 import { IV3PoolProvider } from './v3/pool-provider';
+
+// We multiply eth estimate gas by this to add a buffer for gas limits
+const DEFAULT_ESTIMATE_MULTIPLIER = 1.2;
 
 export class EthEstimateGasSimulator extends Simulator {
   v2PoolProvider: IV2PoolProvider;
   v3PoolProvider: IV3PoolProvider;
+  private overrideEstimateMultiplier: { [chainId in ChainId]?: number };
+
   constructor(
     chainId: ChainId,
     provider: JsonRpcProvider,
     v2PoolProvider: IV2PoolProvider,
-    v3PoolProvider: IV3PoolProvider
+    v3PoolProvider: IV3PoolProvider,
+    portionProvider: IPortionProvider,
+    overrideEstimateMultiplier?: { [chainId in ChainId]?: number }
   ) {
-    super(provider, chainId);
+    super(provider, portionProvider, chainId);
     this.v2PoolProvider = v2PoolProvider;
     this.v3PoolProvider = v3PoolProvider;
+    this.overrideEstimateMultiplier = overrideEstimateMultiplier ?? {};
   }
+
   async ethEstimateGas(
     fromAddress: string,
     swapOptions: SwapOptions,
     route: SwapRoute,
-    l2GasData?: ArbitrumGasData | OptimismGasData
+    providerConfig?: ProviderConfig
   ): Promise<SwapRoute> {
     const currencyIn = route.trade.inputAmount.currency;
     let estimatedGasUsed: BigNumber;
     if (swapOptions.type == SwapType.UNIVERSAL_ROUTER) {
+      if (currencyIn.isNative && this.chainId == ChainId.MAINNET) {
+        // w/o this gas estimate differs by a lot depending on if user holds enough native balance
+        // always estimate gas as if user holds enough balance
+        // so that gas estimate is consistent for UniswapX
+        fromAddress = BEACON_CHAIN_DEPOSIT_ADDRESS;
+      }
       log.info(
-        { methodParameters: route.methodParameters },
+        { addr: fromAddress, methodParameters: route.methodParameters },
         'Simulating using eth_estimateGas on Universal Router'
       );
       try {
@@ -57,11 +78,6 @@ export class EthEstimateGasSimulator extends Simulator {
         };
       }
     } else if (swapOptions.type == SwapType.SWAP_ROUTER_02) {
-      log.info(
-        { methodParameters: route.methodParameters },
-        'Simulating using eth_estimateGas on SwapRouter02'
-      );
-
       try {
         estimatedGasUsed = await this.provider.estimateGas({
           data: route.methodParameters!.calldata,
@@ -82,11 +98,19 @@ export class EthEstimateGasSimulator extends Simulator {
       throw new Error(`Unsupported swap type ${swapOptions}`);
     }
 
-    estimatedGasUsed = this.inflateGasLimit(estimatedGasUsed);
+    estimatedGasUsed = this.adjustGasEstimate(estimatedGasUsed);
+    log.info(
+      {
+        methodParameters: route.methodParameters,
+        estimatedGasUsed: estimatedGasUsed.toString(),
+      },
+      'Simulated using eth_estimateGas on SwapRouter02'
+    );
 
     const {
       estimatedGasUsedUSD,
       estimatedGasUsedQuoteToken,
+      estimatedGasUsedGasToken,
       quoteGasAdjusted,
     } = await calculateGasUsed(
       route.quote.currency.chainId,
@@ -94,33 +118,44 @@ export class EthEstimateGasSimulator extends Simulator {
       estimatedGasUsed,
       this.v2PoolProvider,
       this.v3PoolProvider,
-      l2GasData
+      this.provider,
+      providerConfig
     );
-
     return {
       ...initSwapRouteFromExisting(
         route,
         this.v2PoolProvider,
         this.v3PoolProvider,
+        this.portionProvider,
         quoteGasAdjusted,
         estimatedGasUsed,
         estimatedGasUsedQuoteToken,
-        estimatedGasUsedUSD
+        estimatedGasUsedUSD,
+        swapOptions,
+        estimatedGasUsedGasToken,
+        providerConfig
       ),
       simulationStatus: SimulationStatus.Succeeded,
     };
   }
-  private inflateGasLimit(gasLimit: BigNumber): BigNumber {
-    // multiply by 1.2
-    return gasLimit.add(gasLimit.div(5));
+
+  private adjustGasEstimate(gasLimit: BigNumber): BigNumber {
+    const estimateMultiplier =
+      this.overrideEstimateMultiplier[this.chainId] ??
+      DEFAULT_ESTIMATE_MULTIPLIER;
+
+    const adjustedGasEstimate = BigNumber.from(gasLimit)
+      .mul(estimateMultiplier * 100)
+      .div(100);
+
+    return adjustedGasEstimate;
   }
+
   protected async simulateTransaction(
     fromAddress: string,
-    swapOptions: any,
+    swapOptions: SwapOptions,
     swapRoute: SwapRoute,
-    l2GasData?: OptimismGasData | ArbitrumGasData | undefined,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _providerConfig?: ProviderConfig | undefined
+    _providerConfig?: GasModelProviderConfig
   ): Promise<SwapRoute> {
     const inputAmount = swapRoute.trade.inputAmount;
     if (
@@ -136,7 +171,7 @@ export class EthEstimateGasSimulator extends Simulator {
         fromAddress,
         swapOptions,
         swapRoute,
-        l2GasData
+        _providerConfig
       );
     } else {
       log.info('Token not approved, skipping simulation');

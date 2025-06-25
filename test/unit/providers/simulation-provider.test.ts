@@ -1,15 +1,15 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { Trade } from '@uniswap/router-sdk';
-import { Percent, TradeType } from '@uniswap/sdk-core';
+import { ChainId, Percent, TradeType } from '@uniswap/sdk-core';
 import { BigNumber } from 'ethers';
 import sinon from 'sinon';
 import {
-  ChainId,
   CurrencyAmount,
   EthEstimateGasSimulator,
   FallbackTenderlySimulator,
   IV2PoolProvider,
   IV3PoolProvider,
+  IV4PoolProvider,
   nativeOnChain,
   RouteWithValidQuote,
   SimulationStatus,
@@ -18,10 +18,15 @@ import {
   SwapType,
   TenderlySimulator,
   USDC_MAINNET,
-  V2PoolProvider,
+  V2PoolProvider
 } from '../../../src';
+import {
+  IPortionProvider,
+  PortionProvider
+} from '../../../src/providers/portion-provider';
 import { Erc20 } from '../../../src/types/other/Erc20';
 import { Permit2 } from '../../../src/types/other/Permit2';
+import { UniversalRouterVersion } from '@uniswap/universal-router-sdk';
 
 let tokenContract: Erc20;
 let permit2Contract: Permit2;
@@ -48,10 +53,13 @@ jest.mock('../../../src/util/gas-factory-helpers', () => ({
     swapRoute: SwapRoute,
     _v2PoolProvider: IV2PoolProvider,
     _v3PoolProvider: IV3PoolProvider,
+    _v4PoolProvider: IV4PoolProvider,
+    _portionProvider: IPortionProvider,
     quoteGasAdjusted: CurrencyAmount,
     estimatedGasUsed: BigNumber,
     estimatedGasUsedQuoteToken: CurrencyAmount,
-    estimatedGasUsedUSD: CurrencyAmount
+    estimatedGasUsedUSD: CurrencyAmount,
+    _swapOptions?: SwapOptions,
   ): SwapRoute => {
     return {
       ...swapRoute,
@@ -68,9 +76,17 @@ const v2PoolProvider = sinon.createStubInstance(V2PoolProvider);
 const v3PoolAccessor = {
   getPool: () => undefined,
 };
+const v4PoolAccessor = {
+  getPool: () => undefined,
+};
 const v3PoolProvider = {
   getPools: jest.fn().mockImplementation(() => Promise.resolve(v3PoolAccessor)),
 } as unknown as IV3PoolProvider;
+const v4PoolProvider = {
+  getPools: jest.fn().mockImplementation(() => Promise.resolve(v4PoolAccessor)),
+  getPoolId: jest.fn().mockImplementation(() => Promise.resolve('0')),
+}
+const portionProvider = new PortionProvider();
 const fromAddress = 'fromAddress';
 const amount = CurrencyAmount.fromRawAmount(USDC_MAINNET, 300);
 const trade = { inputAmount: amount, tradeType: TradeType.EXACT_INPUT };
@@ -81,6 +97,7 @@ const quote = {
 const blockNumber = BigNumber.from(0);
 const swapOptions: SwapOptions = {
   type: SwapType.UNIVERSAL_ROUTER,
+  version: UniversalRouterVersion.V1_2,
   slippageTolerance: new Percent(5, 100),
   deadlineOrPreviousBlockhash: 10000000,
   recipient: '0x0',
@@ -122,6 +139,7 @@ describe('Fallback Tenderly simulator', () => {
     simulator = new FallbackTenderlySimulator(
       chainId,
       provider,
+      portionProvider,
       tenderlySimulator,
       ethEstimateGasSimulator
     );
@@ -182,6 +200,35 @@ describe('Fallback Tenderly simulator', () => {
       SimulationStatus.Succeeded
     );
   });
+  test('simuates through eth_estimateGas always when input is ETH', async () => {
+    tokenContract = {
+      balanceOf: async () => {
+        return BigNumber.from(0);
+      },
+      allowance: async () => {
+        return BigNumber.from(0);
+      },
+    } as unknown as Erc20;
+    const ethInputAmount =  CurrencyAmount.fromRawAmount(nativeOnChain(1), 300)
+    const swapRouteWithGasEstimate = await simulator.simulate(
+      fromAddress,
+      swapOptions,
+      {
+        ...swaproute,
+        trade: {
+          inputAmount: ethInputAmount,
+          tradeType: 0
+        } as Trade<any, any, any>,
+      },
+      CurrencyAmount.fromRawAmount(nativeOnChain(1), 300),
+      quote
+    );
+    expect(ethEstimateGasSimulator.ethEstimateGas.called).toBeTruthy();
+    expect(tenderlySimulator.simulateTransaction.called).toBeFalsy();
+    expect(swapRouteWithGasEstimate.simulationStatus).toEqual(
+      SimulationStatus.Succeeded
+    );
+  });
   test('does not simulate when user has insufficient balance', async () => {
     tokenContract = {
       balanceOf: async () => {
@@ -226,7 +273,7 @@ describe('Fallback Tenderly simulator', () => {
       SimulationStatus.Failed
     );
   });
-  test('when eth estimate gas simulator throws', async () => {
+  test('when eth estimate gas simulator throws, try tenderly anyway', async () => {
     tokenContract = {
       balanceOf: async () => {
         return BigNumber.from(325);
@@ -244,8 +291,9 @@ describe('Fallback Tenderly simulator', () => {
       quote
     );
     expect(ethEstimateGasSimulator.ethEstimateGas.called).toBeTruthy();
+    expect(tenderlySimulator.simulateTransaction.called).toBeTruthy();
     expect(swapRouteWithGasEstimate.simulationStatus).toEqual(
-      SimulationStatus.Failed
+      SimulationStatus.Succeeded
     );
   });
 });
@@ -276,7 +324,8 @@ describe('Eth estimate gas simulator', () => {
       chainId,
       provider,
       v2PoolProvider,
-      v3PoolProvider
+      v3PoolProvider,
+      portionProvider
     );
     permit2Contract = {
       allowance: async () => {

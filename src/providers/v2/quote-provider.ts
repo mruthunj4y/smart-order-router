@@ -9,6 +9,7 @@ import { V2Route } from '../../routers/router';
 import { CurrencyAmount } from '../../util/amounts';
 import { log } from '../../util/log';
 import { routeToString } from '../../util/routes';
+import { ProviderConfig } from '../provider';
 
 // Quotes can be null (e.g. pool did not have enough liquidity).
 export type V2AmountQuote = {
@@ -21,12 +22,14 @@ export type V2RouteWithQuotes = [V2Route, V2AmountQuote[]];
 export interface IV2QuoteProvider {
   getQuotesManyExactIn(
     amountIns: CurrencyAmount[],
-    routes: V2Route[]
+    routes: V2Route[],
+    providerConfig: ProviderConfig
   ): Promise<{ routesWithQuotes: V2RouteWithQuotes[] }>;
 
   getQuotesManyExactOut(
     amountOuts: CurrencyAmount[],
-    routes: V2Route[]
+    routes: V2Route[],
+    providerConfig: ProviderConfig
   ): Promise<{ routesWithQuotes: V2RouteWithQuotes[] }>;
 }
 
@@ -40,26 +43,40 @@ export interface IV2QuoteProvider {
 export class V2QuoteProvider implements IV2QuoteProvider {
   /* eslint-disable @typescript-eslint/no-empty-function */
   constructor() {}
+
   /* eslint-enable @typescript-eslint/no-empty-function */
 
   public async getQuotesManyExactIn(
     amountIns: CurrencyAmount[],
-    routes: V2Route[]
+    routes: V2Route[],
+    providerConfig: ProviderConfig
   ): Promise<{ routesWithQuotes: V2RouteWithQuotes[] }> {
-    return this.getQuotes(amountIns, routes, TradeType.EXACT_INPUT);
+    return this.getQuotes(
+      amountIns,
+      routes,
+      TradeType.EXACT_INPUT,
+      providerConfig
+    );
   }
 
   public async getQuotesManyExactOut(
     amountOuts: CurrencyAmount[],
-    routes: V2Route[]
+    routes: V2Route[],
+    providerConfig: ProviderConfig
   ): Promise<{ routesWithQuotes: V2RouteWithQuotes[] }> {
-    return this.getQuotes(amountOuts, routes, TradeType.EXACT_OUTPUT);
+    return this.getQuotes(
+      amountOuts,
+      routes,
+      TradeType.EXACT_OUTPUT,
+      providerConfig
+    );
   }
 
   private async getQuotes(
     amounts: CurrencyAmount[],
     routes: V2Route[],
-    tradeType: TradeType
+    tradeType: TradeType,
+    providerConfig: ProviderConfig
   ): Promise<{ routesWithQuotes: V2RouteWithQuotes[] }> {
     const routesWithQuotes: V2RouteWithQuotes[] = [];
 
@@ -75,8 +92,10 @@ export class V2QuoteProvider implements IV2QuoteProvider {
             let outputAmount = amount.wrapped;
 
             for (const pair of route.pairs) {
-              const [outputAmountNew] = pair.getOutputAmount(outputAmount);
-              outputAmount = outputAmountNew;
+              [outputAmount] = pair.getOutputAmount(
+                outputAmount,
+                providerConfig.enableFeeOnTransferFeeFetching === true
+              );
             }
 
             amountQuotes.push({
@@ -88,7 +107,10 @@ export class V2QuoteProvider implements IV2QuoteProvider {
 
             for (let i = route.pairs.length - 1; i >= 0; i--) {
               const pair = route.pairs[i]!;
-              [inputAmount] = pair.getInputAmount(inputAmount);
+              [inputAmount] = pair.getInputAmount(
+                inputAmount,
+                providerConfig.enableFeeOnTransferFeeFetching === true
+              );
             }
 
             amountQuotes.push({

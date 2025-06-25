@@ -48,20 +48,18 @@ JSON_RPC_PROVIDER = '<JSON_RPC_PROVIDER>'
 To run on chains other than mainnet set up a connection by specifying the environment variable
 
 ```
-JSON_RPC_PROVIDER_ROPSTEN = '<JSON_RPC_PROVIDER>'
-JSON_RPC_PROVIDER_RINKEBY = '<JSON_RPC_PROVIDER>'
 JSON_RPC_PROVIDER_GORLI = '<JSON_RPC_PROVIDER>'
-JSON_RPC_PROVIDER_KOVAN = '<JSON_RPC_PROVIDER>'
 JSON_RPC_PROVIDER_OPTIMISM = '<JSON_RPC_PROVIDER>'
-JSON_RPC_PROVIDER_OPTIMISTIC_KOVAN = '<JSON_RPC_PROVIDER>'
+JSON_RPC_PROVIDER_OPTIMISM_GOERLI = '<JSON_RPC_PROVIDER>'
 JSON_RPC_PROVIDER_ARBITRUM_ONE = '<JSON_RPC_PROVIDER>'
-JSON_RPC_PROVIDER_ARBITRUM_RINKEBY = '<JSON_RPC_PROVIDER>'
 JSON_RPC_PROVIDER_ARBITRUM_GOERLI = '<JSON_RPC_PROVIDER>'
 JSON_RPC_PROVIDER_POLYGON = '<JSON_RPC_PROVIDER>'
 JSON_RPC_PROVIDER_POLYGON_MUMBAI = '<JSON_RPC_PROVIDER>'
 JSON_RPC_PROVIDER_CELO = '<JSON_RPC_PROVIDER>'
 JSON_RPC_PROVIDER_CELO_ALFAJORES = '<JSON_RPC_PROVIDER>'
-JSON_RPC_PROVIDER_BSC = '<JSON_RPC_PROVIDER>'
+JSON_RPC_PROVIDER_BNB = '<JSON_RPC_PROVIDER>'
+JSON_RPC_PROVIDER_AVALANCHE = '<JSON_RPC_PROVIDER>'
+JSON_RPC_PROVIDER_BASE = '<JSON_RPC_PROVIDER>'
 ```
 
 Then from the root directory you can execute the CLI.
@@ -135,6 +133,12 @@ Total ticks crossed: 7
 ./bin/cli quote --tokenIn 0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea --tokenOut 0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b --amount 200000 --exactIn --minSplits 1 --router alpha --chainId 4
 ```
 
+## Sepolia
+
+```
+./bin/cli quote --tokenIn 0x7AF17A48a6336F7dc1beF9D485139f7B6f4FB5C8 --tokenOut 0x6f14C02Fc1F78322cFd7d707aB90f18baD3B54f5 --amount 10 --exactIn --minSplits 1 --router alpha --chainId 11155111
+```
+
 ## Kovan
 
 ```
@@ -152,6 +156,17 @@ Total ticks crossed: 7
 ```
 ./bin/cli quote --tokenIn 0x7F5c764cBc14f9669B88837ca1490cCa17c31607 --tokenOut 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1 --amount 200000 --exactIn --minSplits 1 --router alpha --chainId 10
 
+```
+
+```
+./bin/cli quote --tokenIn 0x7F5c764cBc14f9669B88837ca1490cCa17c31607 --tokenOut 0x4200000000000000000000000000000000000042 --amount 1 --exactIn --minSplits 1 --protocols v2 --router alpha --chainId 10
+```
+
+
+## Optimism-Goerli
+
+```
+./bin/cli quote --tokenIn 0x7E07E15D2a87A24492740D16f5bdF58c16db0c4E --tokenOut 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1 --amount 200000 --exactIn --minSplits 1 --router alpha --chainId 420
 ```
 
 ## Optimistic-Kovan
@@ -196,11 +211,30 @@ Total ticks crossed: 7
 ./bin/cli quote --tokenIn CELO --tokenOut 0x765DE816845861e75A25fCA122bb6898B8B1282a --amount 5 --exactIn --minSplits 1 --protocols v3 --router alpha --chainId 42220
 ```
 
-## BSC Mainnet
+## BNB Mainnet
 
 ```
 ./bin/cli quote --tokenIn 0x55d398326f99059fF775485246999027B3197955 --tokenOut 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d --amount 1 --exactIn --minSplits 1 --protocols v3 --router alpha --chainId 56
 ```
+
+## AVAX Mainnet
+
+```
+./bin/cli quote --tokenIn 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E --tokenOut 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7 --amount 1000 --exactIn --minSplits 1 --protocols v3 --router alpha --chainId 43114
+```
+
+## BASE Mainnet
+
+```
+./bin/cli quote --tokenIn 0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA --tokenOut 0x4200000000000000000000000000000000000006 --amount 10 --exactIn --minSplits 1 --protocols v3 --router alpha --chainId 8453
+```
+
+## ZKSYNC Mainnet
+
+```
+./bin/cli quote --tokenIn 0x5aea5775959fbc2557cc8789bc1bf90a239d9a91 --tokenOut 0x1d17cbcf0d6d143135ae902365d2e5e2a16538d4 --amount 10 --exactIn --minSplits 1 --protocols v3 --router alpha --chainId 324
+```
+
 
 ## Adding a new Chain
 
@@ -221,7 +255,7 @@ The main components to complete are:
 
 ## ProviderGasLimit errors
 
-The package sends many large multicall requests to nodes. You must ensure that your node provider's `eth_call` gas limit is high enough to succesfully process the RPC calls.
+The package sends many large multicall requests to nodes. You must ensure that your node provider's `eth_call` gas limit is high enough to successfully process the RPC calls.
 
 By default each `eth_call` will consume up to:
 

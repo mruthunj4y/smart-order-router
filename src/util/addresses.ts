@@ -1,94 +1,154 @@
-import { Token } from '@uniswap/sdk-core';
+import {
+  ChainId,
+  CHAIN_TO_ADDRESSES_MAP,
+  Currency,
+  SWAP_ROUTER_02_ADDRESSES as SWAP_ROUTER_02_ADDRESSES_HELPER,
+  Token,
+} from '@uniswap/sdk-core';
 import { FACTORY_ADDRESS } from '@uniswap/v3-sdk';
 
-import { ChainId, NETWORKS_WITH_SAME_UNISWAP_ADDRESSES } from './chains';
+import { ADDRESS_ZERO } from '@uniswap/router-sdk';
+import { NETWORKS_WITH_SAME_UNISWAP_ADDRESSES } from './chains';
 
-const CELO_V3_CORE_FACTORY_ADDRESSES =
-  '0xAfE208a311B21f13EF87E33A90049fC17A7acDEc';
-const CELO_QUOTER_ADDRESSES = '0x82825d0554fA07f7FC52Ab63c961F330fdEFa8E8';
-const CELO_MULTICALL_ADDRESS = '0x633987602DE5C4F337e3DbF265303A1080324204';
-
-const ARBITRUM_GOERLI_V3_CORE_FACTORY_ADDRESSES =
-  '0x4893376342d5D7b3e31d4184c08b265e5aB2A3f6';
-const ARBITRUM_GOERLI_QUOTER_ADDRESSES =
-  '0x1dd92b83591781D0C6d98d07391eea4b9a6008FA';
-const ARBITRUM_GOERLI_MULTICALL_ADDRESS =
-  '0x8260CB40247290317a4c062F3542622367F206Ee';
-
-const BSC_V3_CORE_FACTORY_ADDRESSES =
-  '0x128Ce3A3D48f27CE35A3F810cF2cddD2f6879b13';
-const BSC_QUOTER_ADDRESSES = '0xD00bD441CEF3623dC59B5D9b5EF96ee87b42Db42';
-const BSC_MULTICALL_ADDRESS = '0x581e2A6eF5e2032ACD1Eb0263ac8087fa2aEF41f';
-
-export const BSC_TICK_LENS_ADDRESS =
-  '0xf5F4496219F31CDCBa6130B5402873624585615a';
-export const BSC_NONFUNGIBLE_POSITION_MANAGER_ADDRESS =
-  '0x71479Cf279BC2Fcf5b8faA8C9eeD2Ab59127aB95';
-export const BSC_SWAP_ROUTER_02_ADDRESS =
-  '0xa64Dd3A63fEed608660226112E748F93B87E650F';
-export const BSC_V3_MIGRATOR_ADDRESS =
-  '0xB3Abf5790a6F6706F16CBdE1e7de893F3C5746fC';
+export const BNB_TICK_LENS_ADDRESS =
+  CHAIN_TO_ADDRESSES_MAP[ChainId.BNB].tickLensAddress;
+export const BNB_NONFUNGIBLE_POSITION_MANAGER_ADDRESS =
+  CHAIN_TO_ADDRESSES_MAP[ChainId.BNB].nonfungiblePositionManagerAddress;
+export const BNB_SWAP_ROUTER_02_ADDRESS =
+  CHAIN_TO_ADDRESSES_MAP[ChainId.BNB].swapRouter02Address!;
+export const BNB_V3_MIGRATOR_ADDRESS =
+  CHAIN_TO_ADDRESSES_MAP[ChainId.BNB].v3MigratorAddress;
 
 export const V3_CORE_FACTORY_ADDRESSES: AddressMap = {
   ...constructSameAddressMap(FACTORY_ADDRESS),
-  [ChainId.CELO]: CELO_V3_CORE_FACTORY_ADDRESSES,
-  [ChainId.CELO_ALFAJORES]: CELO_V3_CORE_FACTORY_ADDRESSES,
-  [ChainId.ARBITRUM_GOERLI]: ARBITRUM_GOERLI_V3_CORE_FACTORY_ADDRESSES,
-  [ChainId.BSC]: BSC_V3_CORE_FACTORY_ADDRESSES,
+  [ChainId.CELO]: CHAIN_TO_ADDRESSES_MAP[ChainId.CELO].v3CoreFactoryAddress,
+  [ChainId.CELO_ALFAJORES]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.CELO_ALFAJORES].v3CoreFactoryAddress,
+  [ChainId.OPTIMISM_GOERLI]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.OPTIMISM_GOERLI].v3CoreFactoryAddress,
+  [ChainId.OPTIMISM_SEPOLIA]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.OPTIMISM_SEPOLIA].v3CoreFactoryAddress,
+  [ChainId.SEPOLIA]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.SEPOLIA].v3CoreFactoryAddress,
+  [ChainId.ARBITRUM_GOERLI]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.ARBITRUM_GOERLI].v3CoreFactoryAddress,
+  [ChainId.ARBITRUM_SEPOLIA]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.ARBITRUM_SEPOLIA].v3CoreFactoryAddress,
+  [ChainId.BNB]: CHAIN_TO_ADDRESSES_MAP[ChainId.BNB].v3CoreFactoryAddress,
+  [ChainId.AVALANCHE]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.AVALANCHE].v3CoreFactoryAddress,
+  [ChainId.BASE_GOERLI]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.BASE_GOERLI].v3CoreFactoryAddress,
+  [ChainId.BASE]: CHAIN_TO_ADDRESSES_MAP[ChainId.BASE].v3CoreFactoryAddress,
+  [ChainId.BLAST]: CHAIN_TO_ADDRESSES_MAP[ChainId.BLAST].v3CoreFactoryAddress,
+  [ChainId.ZORA]: CHAIN_TO_ADDRESSES_MAP[ChainId.ZORA].v3CoreFactoryAddress,
+  [ChainId.ZKSYNC]: CHAIN_TO_ADDRESSES_MAP[ChainId.ZKSYNC].v3CoreFactoryAddress,
   // TODO: Gnosis + Moonbeam contracts to be deployed
 };
 
 export const QUOTER_V2_ADDRESSES: AddressMap = {
   ...constructSameAddressMap('0x61fFE014bA17989E743c5F6cB21bF9697530B21e'),
-  [ChainId.CELO]: CELO_QUOTER_ADDRESSES,
-  [ChainId.CELO_ALFAJORES]: CELO_QUOTER_ADDRESSES,
-  [ChainId.ARBITRUM_GOERLI]: ARBITRUM_GOERLI_QUOTER_ADDRESSES,
-  [ChainId.BSC]: BSC_QUOTER_ADDRESSES,
+  [ChainId.CELO]: CHAIN_TO_ADDRESSES_MAP[ChainId.CELO].quoterAddress,
+  [ChainId.CELO_ALFAJORES]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.CELO_ALFAJORES].quoterAddress,
+  [ChainId.OPTIMISM_GOERLI]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.OPTIMISM_GOERLI].quoterAddress,
+  [ChainId.OPTIMISM_SEPOLIA]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.OPTIMISM_SEPOLIA].quoterAddress,
+  [ChainId.SEPOLIA]: CHAIN_TO_ADDRESSES_MAP[ChainId.SEPOLIA].quoterAddress,
+  [ChainId.ARBITRUM_GOERLI]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.ARBITRUM_GOERLI].quoterAddress,
+  [ChainId.ARBITRUM_SEPOLIA]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.ARBITRUM_SEPOLIA].quoterAddress,
+  [ChainId.BNB]: CHAIN_TO_ADDRESSES_MAP[ChainId.BNB].quoterAddress,
+  [ChainId.AVALANCHE]: CHAIN_TO_ADDRESSES_MAP[ChainId.AVALANCHE].quoterAddress,
+  [ChainId.BASE_GOERLI]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.BASE_GOERLI].quoterAddress,
+  [ChainId.BASE]: CHAIN_TO_ADDRESSES_MAP[ChainId.BASE].quoterAddress,
+  [ChainId.BLAST]: CHAIN_TO_ADDRESSES_MAP[ChainId.BLAST].quoterAddress,
+  [ChainId.ZORA]: CHAIN_TO_ADDRESSES_MAP[ChainId.ZORA].quoterAddress,
+  [ChainId.ZKSYNC]: CHAIN_TO_ADDRESSES_MAP[ChainId.ZKSYNC].quoterAddress,
   // TODO: Gnosis + Moonbeam contracts to be deployed
 };
 
+export const NEW_QUOTER_V2_ADDRESSES: AddressMap = {
+  ...constructSameAddressMap('0x5e55C9e631FAE526cd4B0526C4818D6e0a9eF0e3'),
+  [ChainId.CELO]: '0x5e55C9e631FAE526cd4B0526C4818D6e0a9eF0e3',
+  [ChainId.CELO_ALFAJORES]: '0x5e55C9e631FAE526cd4B0526C4818D6e0a9eF0e3',
+  [ChainId.OPTIMISM_SEPOLIA]: '0x5e55C9e631FAE526cd4B0526C4818D6e0a9eF0e3',
+  [ChainId.SEPOLIA]: '0xf0c802dcb0cf1c4f7b953756b49d940eed190221',
+  [ChainId.ARBITRUM_SEPOLIA]: '0x5e55C9e631FAE526cd4B0526C4818D6e0a9eF0e3',
+  [ChainId.BNB]: '0x5e55C9e631FAE526cd4B0526C4818D6e0a9eF0e3',
+  [ChainId.AVALANCHE]: '0xf0c802dcb0cf1c4f7b953756b49d940eed190221',
+  [ChainId.POLYGON_MUMBAI]: '0x60e06b92bC94a665036C26feC5FF2A92E2d04c5f',
+  [ChainId.BASE]: '0x222cA98F00eD15B1faE10B61c277703a194cf5d2',
+  [ChainId.BLAST]: '0x9D0F15f2cf58655fDDcD1EE6129C547fDaeD01b1',
+  [ChainId.ZORA]: '0x9D0F15f2cf58655fDDcD1EE6129C547fDaeD01b1',
+  [ChainId.ZKSYNC]: '0x071Bd2063dF031EDd110E27C6F4CDe50A3DeF2d4',
+};
+
 export const MIXED_ROUTE_QUOTER_V1_ADDRESSES: AddressMap = {
-  [ChainId.MAINNET]: '0x84E44095eeBfEC7793Cd7d5b57B7e401D7f1cA2E',
-  [ChainId.RINKEBY]: '0x84E44095eeBfEC7793Cd7d5b57B7e401D7f1cA2E',
-  [ChainId.ROPSTEN]: '0x84E44095eeBfEC7793Cd7d5b57B7e401D7f1cA2E',
-  [ChainId.GÖRLI]: '0xBa60b6e6fF25488308789E6e0A65D838be34194e',
+  [ChainId.MAINNET]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.MAINNET].mixedRouteQuoterV1Address,
+  [ChainId.GOERLI]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.GOERLI].mixedRouteQuoterV1Address,
+};
+
+// TODO: use CHAIN_TO_ADDRESSES_MAP[ChainId.GOERLI].mixedRouteQuoterV2Address once sdk-core finalizes deploy addresses
+export const MIXED_ROUTE_QUOTER_V2_ADDRESSES: AddressMap = {
+  [ChainId.SEPOLIA]: '0x4745f77b56a0e2294426e3936dc4fab68d9543cd',
 };
 
 export const UNISWAP_MULTICALL_ADDRESSES: AddressMap = {
   ...constructSameAddressMap('0x1F98415757620B543A52E61c46B32eB19261F984'),
-  [ChainId.CELO]: CELO_MULTICALL_ADDRESS,
-  [ChainId.CELO_ALFAJORES]: CELO_MULTICALL_ADDRESS,
-  [ChainId.ARBITRUM_GOERLI]: ARBITRUM_GOERLI_MULTICALL_ADDRESS,
-  [ChainId.BSC]: BSC_MULTICALL_ADDRESS,
+  [ChainId.CELO]: CHAIN_TO_ADDRESSES_MAP[ChainId.CELO].multicallAddress,
+  [ChainId.CELO_ALFAJORES]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.CELO_ALFAJORES].multicallAddress,
+  [ChainId.OPTIMISM_GOERLI]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.OPTIMISM_GOERLI].multicallAddress,
+  [ChainId.OPTIMISM_SEPOLIA]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.OPTIMISM_SEPOLIA].multicallAddress,
+  [ChainId.SEPOLIA]: CHAIN_TO_ADDRESSES_MAP[ChainId.SEPOLIA].multicallAddress,
+  [ChainId.ARBITRUM_GOERLI]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.ARBITRUM_GOERLI].multicallAddress,
+  [ChainId.ARBITRUM_SEPOLIA]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.ARBITRUM_SEPOLIA].multicallAddress,
+  [ChainId.BNB]: CHAIN_TO_ADDRESSES_MAP[ChainId.BNB].multicallAddress,
+  [ChainId.AVALANCHE]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.AVALANCHE].multicallAddress,
+  [ChainId.BASE_GOERLI]:
+    CHAIN_TO_ADDRESSES_MAP[ChainId.BASE_GOERLI].multicallAddress,
+  [ChainId.BASE]: CHAIN_TO_ADDRESSES_MAP[ChainId.BASE].multicallAddress,
+  [ChainId.BLAST]: CHAIN_TO_ADDRESSES_MAP[ChainId.BLAST].multicallAddress,
+  [ChainId.ZORA]: CHAIN_TO_ADDRESSES_MAP[ChainId.ZORA].multicallAddress,
+  [ChainId.ZKSYNC]: CHAIN_TO_ADDRESSES_MAP[ChainId.ZKSYNC].multicallAddress,
   // TODO: Gnosis + Moonbeam contracts to be deployed
 };
 
-// export const SWAP_ROUTER_02_ADDRESSES: AddressMap = {
-//   ...constructSameAddressMap('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
-//   // TODO: not sure if swapRouter02 is deployed on Celo, Alfajores, and Arb Goerli
-//   [ChainId.CELO]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-//   [ChainId.CELO_ALFAJORES]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-//   [ChainId.ARBITRUM_GOERLI]: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-//   [ChainId.BSC]: BSC_SWAP_ROUTER_02_ADDRESS,
-// };
+export const SWAP_ROUTER_02_ADDRESSES = (chainId: number): string => {
+  return (
+    SWAP_ROUTER_02_ADDRESSES_HELPER(chainId) ??
+    '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'
+  );
+};
 
-export const SWAP_ROUTER_02_ADDRESSES = (chainId: number) => {
-  if (chainId == ChainId.BSC) {
-    return BSC_SWAP_ROUTER_02_ADDRESS;
-  }
-  return '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
+export const STATE_VIEW_ADDRESSES: AddressMap = {
+  ...constructSameAddressMap('0x1F98415757620B543A52E61c46B32eB19261F984'),
+  [ChainId.SEPOLIA]: '0x6Bb7157fb50e3Ae4983Ccdc62Fb8173c03c6b0a7',
 };
 
 export const OVM_GASPRICE_ADDRESS =
   '0x420000000000000000000000000000000000000F';
 export const ARB_GASINFO_ADDRESS = '0x000000000000000000000000000000000000006C';
-export const TICK_LENS_ADDRESS = '0xbfd8137f7d1516D3ea5cA83523914859ec47F573';
+export const TICK_LENS_ADDRESS =
+  CHAIN_TO_ADDRESSES_MAP[ChainId.ARBITRUM_ONE].tickLensAddress;
 export const NONFUNGIBLE_POSITION_MANAGER_ADDRESS =
-  '0xC36442b4a4522E871399CD717aBDD847Ab11FE88';
-export const V3_MIGRATOR_ADDRESS = '0xA5644E29708357803b5A882D272c41cC0dF92B34';
+  CHAIN_TO_ADDRESSES_MAP[ChainId.MAINNET].nonfungiblePositionManagerAddress;
+export const V3_MIGRATOR_ADDRESS =
+  CHAIN_TO_ADDRESSES_MAP[ChainId.MAINNET].v3MigratorAddress;
 export const MULTICALL2_ADDRESS = '0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696';
 
-export type AddressMap = { [chainId: number]: string };
+export type AddressMap = { [chainId: number]: string | undefined };
 
 export function constructSameAddressMap<T extends string>(
   address: T,
@@ -113,7 +173,10 @@ export const WETH9: {
     | ChainId.CELO_ALFAJORES
     | ChainId.GNOSIS
     | ChainId.MOONBEAM
-    | ChainId.BSC
+    | ChainId.BNB
+    | ChainId.AVALANCHE
+    // TODO: remove ROOTSTOCK once we support both at the routing level
+    | ChainId.ROOTSTOCK
   >]: Token;
 } = {
   [ChainId.MAINNET]: new Token(
@@ -123,30 +186,16 @@ export const WETH9: {
     'WETH',
     'Wrapped Ether'
   ),
-  [ChainId.ROPSTEN]: new Token(
-    ChainId.ROPSTEN,
-    '0xc778417E063141139Fce010982780140Aa0cD5Ab',
-    18,
-    'WETH',
-    'Wrapped Ether'
-  ),
-  [ChainId.RINKEBY]: new Token(
-    ChainId.RINKEBY,
-    '0xc778417E063141139Fce010982780140Aa0cD5Ab',
-    18,
-    'WETH',
-    'Wrapped Ether'
-  ),
-  [ChainId.GÖRLI]: new Token(
-    ChainId.GÖRLI,
+  [ChainId.GOERLI]: new Token(
+    ChainId.GOERLI,
     '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
     18,
     'WETH',
     'Wrapped Ether'
   ),
-  [ChainId.KOVAN]: new Token(
-    ChainId.KOVAN,
-    '0xd0A1E359811322d97991E03f863a0C30C2cF029C',
+  [ChainId.SEPOLIA]: new Token(
+    ChainId.SEPOLIA,
+    '0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14',
     18,
     'WETH',
     'Wrapped Ether'
@@ -158,8 +207,15 @@ export const WETH9: {
     'WETH',
     'Wrapped Ether'
   ),
-  [ChainId.OPTIMISTIC_KOVAN]: new Token(
-    ChainId.OPTIMISTIC_KOVAN,
+  [ChainId.OPTIMISM_GOERLI]: new Token(
+    ChainId.OPTIMISM_GOERLI,
+    '0x4200000000000000000000000000000000000006',
+    18,
+    'WETH',
+    'Wrapped Ether'
+  ),
+  [ChainId.OPTIMISM_SEPOLIA]: new Token(
+    ChainId.OPTIMISM_SEPOLIA,
     '0x4200000000000000000000000000000000000006',
     18,
     'WETH',
@@ -172,13 +228,6 @@ export const WETH9: {
     'WETH',
     'Wrapped Ether'
   ),
-  [ChainId.ARBITRUM_RINKEBY]: new Token(
-    ChainId.ARBITRUM_RINKEBY,
-    '0xB47e6A5f8b33b3F17603C83a0535A9dcD7E32681',
-    18,
-    'WETH',
-    'Wrapped Ether'
-  ),
   [ChainId.ARBITRUM_GOERLI]: new Token(
     ChainId.ARBITRUM_GOERLI,
     '0xe39Ab88f8A4777030A534146A9Ca3B52bd5D43A3',
@@ -186,4 +235,72 @@ export const WETH9: {
     'WETH',
     'Wrapped Ether'
   ),
+  [ChainId.ARBITRUM_SEPOLIA]: new Token(
+    ChainId.ARBITRUM_SEPOLIA,
+    '0xc556bAe1e86B2aE9c22eA5E036b07E55E7596074',
+    18,
+    'WETH',
+    'Wrapped Ether'
+  ),
+  [ChainId.BASE_GOERLI]: new Token(
+    ChainId.BASE_GOERLI,
+    '0x4200000000000000000000000000000000000006',
+    18,
+    'WETH',
+    'Wrapped Ether'
+  ),
+  [ChainId.BASE]: new Token(
+    ChainId.BASE,
+    '0x4200000000000000000000000000000000000006',
+    18,
+    'WETH',
+    'Wrapped Ether'
+  ),
+  [ChainId.BLAST]: new Token(
+    ChainId.BLAST,
+    '0x4300000000000000000000000000000000000004',
+    18,
+    'WETH',
+    'Wrapped Ether'
+  ),
+  [ChainId.ZORA]: new Token(
+    ChainId.ZORA,
+    '0x4200000000000000000000000000000000000006',
+    18,
+    'WETH',
+    'Wrapped Ether'
+  ),
+  [ChainId.ZORA_SEPOLIA]: new Token(
+    ChainId.ZORA_SEPOLIA,
+    '0x4200000000000000000000000000000000000006',
+    18,
+    'WETH',
+    'Wrapped Ether'
+  ),
+  [ChainId.ZKSYNC]: new Token(
+    ChainId.ZKSYNC,
+    '0x5aea5775959fbc2557cc8789bc1bf90a239d9a91',
+    18,
+    'WETH',
+    'Wrapped Ether'
+  ),
 };
+
+export const BEACON_CHAIN_DEPOSIT_ADDRESS =
+  '0x00000000219ab540356cBB839Cbe05303d7705Fa';
+
+export function getAddressLowerCase(currency: Currency): string {
+  if (currency.isToken) {
+    return currency.address.toLowerCase();
+  } else {
+    return ADDRESS_ZERO;
+  }
+}
+
+export function getAddress(currency: Currency): string {
+  if (currency.isToken) {
+    return currency.address;
+  } else {
+    return ADDRESS_ZERO;
+  }
+}
