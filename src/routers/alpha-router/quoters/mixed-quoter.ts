@@ -1,5 +1,5 @@
-import { Protocol } from '@uniswap/router-sdk';
-import { ChainId, Currency, TradeType } from '@uniswap/sdk-core';
+import { Protocol } from '@surge/router-sdk';
+import { ChainId, Currency, TradeType } from '@surge/sdk-core';
 import _ from 'lodash';
 
 import {
@@ -37,11 +37,7 @@ import { BaseQuoter } from './base-quoter';
 import { GetQuotesResult, GetRoutesResult } from './model';
 
 export class MixedQuoter extends BaseQuoter<
-  [
-    V3CandidatePools,
-    V2CandidatePools,
-    CrossLiquidityCandidatePools
-  ],
+  [V3CandidatePools, V2CandidatePools, CrossLiquidityCandidatePools],
   MixedRoute,
   Currency
 > {
@@ -79,7 +75,7 @@ export class MixedQuoter extends BaseQuoter<
   protected async getRoutes(
     currencyIn: Currency,
     currencyOut: Currency,
-    v4v3v2candidatePools: [
+    v3v2candidatePools: [
       V3CandidatePools,
       V2CandidatePools,
       CrossLiquidityCandidatePools
@@ -93,11 +89,8 @@ export class MixedQuoter extends BaseQuoter<
       throw new Error('Mixed route quotes are not supported for EXACT_OUTPUT');
     }
 
-    const [
-      v3CandidatePools,
-      v2CandidatePools,
-      crossLiquidityPools,
-    ] = v4v3v2candidatePools;
+    const [v3CandidatePools, v2CandidatePools, crossLiquidityPools] =
+      v3v2candidatePools;
 
     const {
       V2poolAccessor,

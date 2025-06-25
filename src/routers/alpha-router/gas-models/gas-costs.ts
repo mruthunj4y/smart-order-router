@@ -1,7 +1,7 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { ChainId, Currency } from '@uniswap/sdk-core';
+import { ChainId, Currency } from '@surge/sdk-core';
 
-import { Protocol } from '@uniswap/router-sdk';
+import { Protocol } from '@surge/router-sdk';
 import { AAVE_MAINNET, LIDO_MAINNET } from '../../../providers';
 import { V3Route } from '../../router';
 
@@ -121,10 +121,7 @@ export const SINGLE_HOP_OVERHEAD = (_id: ChainId): BigNumber => {
   return BigNumber.from(15000);
 };
 
-export const TOKEN_OVERHEAD = (
-  id: ChainId,
-  route: V3Route
-): BigNumber => {
+export const TOKEN_OVERHEAD = (id: ChainId, route: V3Route): BigNumber => {
   const currencies: Currency[] = route.tokenPath;
   let overhead = BigNumber.from(0);
 

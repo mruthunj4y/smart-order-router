@@ -1,4 +1,4 @@
-import { Fraction } from '@uniswap/sdk-core';
+import { Fraction } from '@surge/sdk-core';
 
 import { CurrencyAmount } from '../../../util/amounts';
 

@@ -1,7 +1,7 @@
-import { Protocol } from '@uniswap/router-sdk';
-import { Token } from '@uniswap/sdk-core';
-import { Pair } from '@uniswap/v2-sdk';
-import { Pool as V3Pool } from '@uniswap/v3-sdk';
+import { Protocol } from '@surge/router-sdk';
+import { Token } from '@surge/sdk-core';
+import { Pair } from '@surge/v2-sdk';
+import { Pool as V3Pool } from '@surge/v3-sdk';
 
 import {
   MixedRoute,
@@ -42,12 +42,12 @@ export class CachedRoute<Route extends SupportedRoutes> {
     return this.route.protocol;
   }
 
-  // TODO: ROUTE-217 - Support native currency routing in V4
+  // TODO: ROUTE-217 - Support native currency routing
   public get tokenIn(): Token {
     return this.route.input.wrapped;
   }
 
-  // TODO: ROUTE-217 - Support native currency routing in V4
+  // TODO: ROUTE-217 - Support native currency routing
   public get tokenOut(): Token {
     return this.route.output.wrapped;
   }

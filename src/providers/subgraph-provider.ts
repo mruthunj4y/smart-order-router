@@ -1,5 +1,5 @@
-import { Protocol } from '@uniswap/router-sdk';
-import { ChainId, Currency, Token } from '@uniswap/sdk-core';
+import { Protocol } from '@surge/router-sdk';
+import { ChainId, Currency, Token } from '@surge/sdk-core';
 import retry from 'async-retry';
 import Timeout from 'await-timeout';
 import { gql, GraphQLClient } from 'graphql-request';
@@ -20,7 +20,7 @@ export interface ISubgraphProvider<TSubgraphPool extends SubgraphPool> {
 
 const PAGE_SIZE = 1000; // 1k is max possible query size from subgraph.
 
-export type V3V4SubgraphPool = {
+type V3SubgraphPool = {
   id: string;
   feeTier: string;
   liquidity: string;
@@ -34,7 +34,7 @@ export type V3V4SubgraphPool = {
   tvlUSD: number;
 };
 
-export type V3V4RawSubgraphPool = {
+type V3RawSubgraphPool = {
   id: string;
   feeTier: string;
   liquidity: string;
@@ -52,8 +52,8 @@ export type V3V4RawSubgraphPool = {
 };
 
 export abstract class SubgraphProvider<
-  TRawSubgraphPool extends V3V4RawSubgraphPool,
-  TSubgraphPool extends V3V4SubgraphPool
+  TRawSubgraphPool extends V3RawSubgraphPool,
+  TSubgraphPool extends V3SubgraphPool
 > {
   private client: GraphQLClient;
 

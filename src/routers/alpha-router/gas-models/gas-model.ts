@@ -3,9 +3,9 @@ import {
   ChainId,
   CurrencyAmount as CurrencyAmountRaw,
   Token,
-} from '@uniswap/sdk-core';
-import { Pair } from '@uniswap/v2-sdk';
-import { Pool } from '@uniswap/v3-sdk';
+} from '@surge/sdk-core';
+import { Pair } from '@surge/v2-sdk';
+import { Pool } from '@surge/v3-sdk';
 
 import { ProviderConfig } from '../../../providers/provider';
 import {

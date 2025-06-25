@@ -1,20 +1,15 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { Protocol } from '@uniswap/router-sdk';
-import { Currency, Token, TradeType } from '@uniswap/sdk-core';
-import { Pool as V3Pool } from '@uniswap/v3-sdk';
+import { Protocol } from '@surge/router-sdk';
+import { Currency, Token, TradeType } from '@surge/sdk-core';
+import { Pool as V3Pool } from '@surge/v3-sdk';
 import _ from 'lodash';
 
-import { Pair } from '@uniswap/v2-sdk';
+import { Pair } from '@surge/v2-sdk';
 import { IV2PoolProvider } from '../../../providers/v2/pool-provider';
 import { IV3PoolProvider } from '../../../providers/v3/pool-provider';
 import { CurrencyAmount } from '../../../util/amounts';
 import { routeToString } from '../../../util/routes';
-import {
-  MixedRoute,
-  SupportedRoutes,
-  V2Route,
-  V3Route,
-} from '../../router';
+import { MixedRoute, SupportedRoutes, V2Route, V3Route } from '../../router';
 import { IGasModel } from '../gas-models/gas-model';
 
 /**

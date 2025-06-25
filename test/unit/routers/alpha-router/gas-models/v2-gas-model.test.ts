@@ -1,4 +1,4 @@
-import { Currency, Ether } from '@uniswap/sdk-core';
+import { Currency, Ether } from '@surge/sdk-core';
 import { BigNumber } from 'ethers';
 import { DAI_MAINNET, USDC_MAINNET, V2Route } from '../../../../../src';
 import {
@@ -19,7 +19,9 @@ import { BaseProvider } from '@ethersproject/providers';
 describe('v2 gas model tests', () => {
   const gasPriceWei = BigNumber.from(1000000000);
   const chainId = 1;
-  const v2GasModelFactory = new V2HeuristicGasModelFactory(sinon.createStubInstance(BaseProvider));
+  const v2GasModelFactory = new V2HeuristicGasModelFactory(
+    sinon.createStubInstance(BaseProvider)
+  );
 
   const mockedV2PoolProvider = getMockedV2PoolProvider();
 
@@ -38,7 +40,8 @@ describe('v2 gas model tests', () => {
       gasModel: v2GasModel,
     });
 
-    const { gasEstimate, gasCostInToken, gasCostInUSD } = v2GasModel.estimateGasCost(v2RouteWithQuote);
+    const { gasEstimate, gasCostInToken, gasCostInUSD } =
+      v2GasModel.estimateGasCost(v2RouteWithQuote);
 
     const hops = v2RouteWithQuote.route.pairs.length;
     let expectedGasCost = BASE_SWAP_COST.add(COST_PER_EXTRA_HOP.mul(hops - 1));
@@ -77,7 +80,8 @@ describe('v2 gas model tests', () => {
       gasModel: v2GasModel,
     });
 
-    const { gasEstimate, gasCostInToken, gasCostInUSD } = v2GasModel.estimateGasCost(v2RouteWithQuote);
+    const { gasEstimate, gasCostInToken, gasCostInUSD } =
+      v2GasModel.estimateGasCost(v2RouteWithQuote);
 
     const hops = v2RouteWithQuote.route.pairs.length;
     let expectedGasCost = BASE_SWAP_COST.add(
@@ -92,7 +96,7 @@ describe('v2 gas model tests', () => {
   it('returns gas estimate for specified gasToken', async () => {
     // copied from 'returns correct gas estimate for a v2 route | hops: 1'
     const quoteToken = DAI_MAINNET;
-    const gasToken = USDC_MAINNET
+    const gasToken = USDC_MAINNET;
 
     const v2GasModel = await v2GasModelFactory.buildGasModel({
       chainId: chainId,
@@ -100,7 +104,7 @@ describe('v2 gas model tests', () => {
       poolProvider: mockedV2PoolProvider,
       token: quoteToken,
       providerConfig: {
-        gasToken: gasToken
+        gasToken: gasToken,
       },
     });
 
@@ -108,7 +112,8 @@ describe('v2 gas model tests', () => {
       gasModel: v2GasModel,
     });
 
-    const { gasEstimate, gasCostInToken, gasCostInUSD, gasCostInGasToken } = v2GasModel.estimateGasCost(v2RouteWithQuote);
+    const { gasEstimate, gasCostInToken, gasCostInUSD, gasCostInGasToken } =
+      v2GasModel.estimateGasCost(v2RouteWithQuote);
 
     const hops = v2RouteWithQuote.route.pairs.length;
     let expectedGasCost = BASE_SWAP_COST.add(COST_PER_EXTRA_HOP.mul(hops - 1));

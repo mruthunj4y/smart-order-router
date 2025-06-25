@@ -1,8 +1,8 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { ChainId, Currency, Ether, Token } from '@uniswap/sdk-core';
-import { TokenList } from '@uniswap/token-lists';
-import { Pair } from '@uniswap/v2-sdk';
-import { encodeSqrtRatioX96, FeeAmount, Pool as V3Pool } from '@uniswap/v3-sdk';
+import { ChainId, Currency, Ether, Token } from '@surge/sdk-core';
+import { TokenList } from '@surge/token-lists';
+import { Pair } from '@surge/v2-sdk';
+import { encodeSqrtRatioX96, FeeAmount, Pool as V3Pool } from '@surge/v3-sdk';
 import _ from 'lodash';
 import {
   AlphaRouterConfig,
@@ -19,7 +19,6 @@ import {
   WBTC_MAINNET as WBTC,
   WRAPPED_NATIVE_CURRENCY,
 } from '../../src';
-import { ADDRESS_ZERO } from '@uniswap/router-sdk';
 
 export const mockBlock = 123456789;
 export const mockGasPriceWeiBN = BigNumber.from(100000);
@@ -51,7 +50,7 @@ export const mockRoutingConfig: AlphaRouterConfig = {
 
 // Mock 0 decimal token
 export const MOCK_ZERO_DEC_TOKEN = new Token(
-  ChainId.MAINNET,
+  ChainId.XRPL_EVM_TESTNET,
   '0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844',
   0,
   'MOCK',
@@ -134,7 +133,7 @@ export const USDC_DAI_LOW = new V3Pool(
 export const USDC_DAI_LOW_200 = new V3Pool(
   USDC,
   DAI,
-  FeeAmount.LOW_200,
+  FeeAmount.LOW,
   encodeSqrtRatioX96(1, 1),
   10,
   0
@@ -247,7 +246,7 @@ export const WBTC_WETH = new Pair(
 );
 
 export const BULLET = new Token(
-  ChainId.MAINNET,
+  ChainId.XRPL_EVM_TESTNET,
   '0x8ef32a03784c8Fd63bBf027251b9620865bD54B6',
   8,
   'BULLET',
@@ -409,14 +408,14 @@ export const mockTokenList: TokenList = {
 };
 
 export const BLAST_WITHOUT_TAX = new Token(
-  ChainId.MAINNET,
+  ChainId.XRPL_EVM_TESTNET,
   '0x3ed643e9032230f01c6c36060e305ab53ad3b482',
   18,
   'BLAST',
-  'BLAST',
+  'BLAST'
 );
 export const BLAST = new Token(
-  ChainId.MAINNET,
+  ChainId.XRPL_EVM_TESTNET,
   '0x3ed643e9032230f01c6c36060e305ab53ad3b482',
   18,
   'BLAST',
@@ -426,7 +425,7 @@ export const BLAST = new Token(
   BigNumber.from(10000)
 );
 export const BULLET_WITHOUT_TAX = new Token(
-  ChainId.MAINNET,
+  ChainId.XRPL_EVM_TESTNET,
   '0x8ef32a03784c8Fd63bBf027251b9620865bD54B6',
   8,
   'BULLET',
@@ -434,7 +433,7 @@ export const BULLET_WITHOUT_TAX = new Token(
   false
 );
 export const STETH_WITHOUT_TAX = new Token(
-  ChainId.MAINNET,
+  ChainId.XRPL_EVM_TESTNET,
   '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
   18,
   'stETH',
@@ -443,7 +442,7 @@ export const STETH_WITHOUT_TAX = new Token(
 );
 // stETH is a special case (rebase token), that would make the token include buyFeeBps and sellFeeBps of 0 as always
 export const STETH = new Token(
-  ChainId.MAINNET,
+  ChainId.XRPL_EVM_TESTNET,
   '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
   18,
   'stETH',
@@ -453,7 +452,7 @@ export const STETH = new Token(
   BigNumber.from(0)
 );
 export const BITBOY = new Token(
-  ChainId.MAINNET,
+  ChainId.XRPL_EVM_TESTNET,
   '0x4a500ed6add5994569e66426588168705fcc9767',
   8,
   'BITBOY',
@@ -463,17 +462,17 @@ export const BITBOY = new Token(
   BigNumber.from(300)
 );
 export const BOYS = new Token(
-  ChainId.BASE,
+  ChainId.XRPL_EVM_TESTNET,
   '0x4d58608EFf50b691A3B76189aF2a7A123dF1e9ba',
   9,
   'BOYS',
   'Boysclub',
   false,
   BigNumber.from(0),
-  BigNumber.from(200),
+  BigNumber.from(200)
 );
 export const DFNDR = new Token(
-  ChainId.MAINNET,
+  ChainId.XRPL_EVM_TESTNET,
   '0x3f57c35633cb29834bb7577ba8052eab90f52a02',
   18,
   'DFNDR',
@@ -483,7 +482,7 @@ export const DFNDR = new Token(
   BigNumber.from(500)
 );
 export const DFNDR_WITHOUT_TAX = new Token(
-  ChainId.MAINNET,
+  ChainId.XRPL_EVM_TESTNET,
   '0x3f57c35633cb29834bb7577ba8052eab90f52a02',
   18,
   'DFNDR',
@@ -496,10 +495,10 @@ export const PORTION_RECIPIENT = '0xd8da6bf26964af9d7eed9e03e53415d37aa96045';
 export const PORTION_TYPE = 'flat';
 
 export type Portion = {
-  bips: number,
-  recipient: string,
-  type: string,
-}
+  bips: number;
+  recipient: string;
+  type: string;
+};
 
 export const FLAT_PORTION: Portion = {
   bips: PORTION_BIPS,
@@ -508,12 +507,12 @@ export const FLAT_PORTION: Portion = {
 };
 
 export const GREENLIST_TOKEN_PAIRS: Array<[Currency, Currency]> = [
-  [Ether.onChain(ChainId.MAINNET), USDC],
-  [WRAPPED_NATIVE_CURRENCY[ChainId.MAINNET], USDT],
+  [Ether.onChain(  ChainId.XRPL_EVM_TESTNET), USDC],
+  [WRAPPED_NATIVE_CURRENCY[  ChainId.XRPL_EVM_TESTNET], USDT],
   [DAI, WBTC],
 ];
 
 export const GREENLIST_CARVEOUT_PAIRS: Array<[Currency, Currency]> = [
   [USDC, DAI],
-  [WRAPPED_NATIVE_CURRENCY[ChainId.MAINNET], Ether.onChain(ChainId.MAINNET)],
+  [WRAPPED_NATIVE_CURRENCY[  ChainId.XRPL_EVM_TESTNET], Ether.onChain(  ChainId.XRPL_EVM_TESTNET)],
 ];

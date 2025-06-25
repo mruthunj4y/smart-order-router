@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { ChainId, Token } from '@uniswap/sdk-core';
-import { TokenInfo, TokenList } from '@uniswap/token-lists';
+import { ChainId, Token } from '@surge/sdk-core';
+import { TokenInfo, TokenList } from '@surge/token-lists';
 import axios from 'axios';
 
 import { log } from '../util/log';

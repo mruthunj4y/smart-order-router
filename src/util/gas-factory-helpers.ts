@@ -1,11 +1,11 @@
 import { estimateL1Gas, estimateL1GasCost } from '@eth-optimism/sdk';
 import { BigNumber } from '@ethersproject/bignumber';
 import { BaseProvider, TransactionRequest } from '@ethersproject/providers';
-import { Protocol } from '@uniswap/router-sdk';
-import { ChainId, Percent, Token, TradeType } from '@uniswap/sdk-core';
-import { UniversalRouterVersion } from '@uniswap/universal-router-sdk';
-import { Pair } from '@uniswap/v2-sdk';
-import { FeeAmount, Pool } from '@uniswap/v3-sdk';
+import { Protocol } from '@surge/router-sdk';
+import { ChainId, Percent, Token, TradeType } from '@surge/sdk-core';
+import { UniversalRouterVersion } from '@surge/universal-router-sdk';
+import { Pair } from '@surge/v2-sdk';
+import { FeeAmount, Pool } from '@surge/v3-sdk';
 import brotli from 'brotli';
 import JSBI from 'jsbi';
 import _ from 'lodash';

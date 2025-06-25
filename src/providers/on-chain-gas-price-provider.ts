@@ -1,4 +1,4 @@
-import { ChainId } from '@uniswap/sdk-core';
+import { ChainId } from '@surge/sdk-core';
 
 import { opStackChains } from '../util/l2FeeChains';
 import { EIP1559GasPriceProvider } from './eip-1559-gas-price-provider';

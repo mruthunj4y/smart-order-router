@@ -1,7 +1,7 @@
-import { ADDRESS_ZERO, Protocol } from '@uniswap/router-sdk';
-import { Currency, Percent } from '@uniswap/sdk-core';
-import { Pair } from '@uniswap/v2-sdk';
-import { Pool as V3Pool } from '@uniswap/v3-sdk';
+import { ADDRESS_ZERO, Protocol } from '@surge/router-sdk';
+import { Currency, Percent } from '@surge/sdk-core';
+import { Pair } from '@surge/v2-sdk';
+import { Pool as V3Pool } from '@surge/v3-sdk';
 import _ from 'lodash';
 
 import {
@@ -12,7 +12,7 @@ import { MixedRoute, SupportedRoutes } from '../routers/router';
 
 import { V3_CORE_FACTORY_ADDRESSES } from './addresses';
 
-import { TPool } from '@uniswap/router-sdk/dist/utils/TPool';
+import { TPool } from '@surge/router-sdk/dist/utils/TPool';
 import { CurrencyAmount } from '.';
 import { CachedRoutes } from '../providers';
 
@@ -41,7 +41,7 @@ export const routeToPools = (route: SupportedRoutes): TPool[] => {
 };
 
 export const poolToString = (pool: TPool): string => {
- if (pool instanceof V3Pool) {
+  if (pool instanceof V3Pool) {
     return ` -- ${pool.fee / 10000}% [${V3Pool.getAddress(
       pool.token0,
       pool.token1,

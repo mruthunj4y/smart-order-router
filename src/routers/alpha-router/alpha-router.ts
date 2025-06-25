@@ -1,17 +1,11 @@
 import { BigNumber } from '@ethersproject/bignumber';
 import { BaseProvider, JsonRpcProvider } from '@ethersproject/providers';
-import DEFAULT_TOKEN_LIST from '@uniswap/default-token-list';
-import { Protocol, SwapRouter, Trade, ZERO } from '@uniswap/router-sdk';
-import {
-  ChainId,
-  Currency,
-  Fraction,
-  Token,
-  TradeType,
-} from '@uniswap/sdk-core';
-import { TokenList } from '@uniswap/token-lists';
-import { UniversalRouterVersion } from '@uniswap/universal-router-sdk';
-import { Pool, Position, SqrtPriceMath, TickMath } from '@uniswap/v3-sdk';
+import DEFAULT_TOKEN_LIST from '@surge/default-token-list';
+import { Protocol, SwapRouter, Trade, ZERO } from '@surge/router-sdk';
+import { ChainId, Currency, Fraction, Token, TradeType } from '@surge/sdk-core';
+import { TokenList } from '@surge/token-lists';
+import { UniversalRouterVersion } from '@surge/universal-router-sdk';
+import { Pool, Position, SqrtPriceMath, TickMath } from '@surge/v3-sdk';
 import retry from 'async-retry';
 import JSBI from 'jsbi';
 import _ from 'lodash';
@@ -186,13 +180,6 @@ export type AlphaRouterParams = {
    */
   multicall2Provider?: UniswapMulticallProvider;
   /**
-   * The provider for getting all pools that exist on V4 from the Subgraph. The pools
-   * from this provider are filtered during the algorithm to a set of candidate pools.
-   */
-  /**
-   * The provider for getting data about V4 pools.
-   */
-  /**
    * The provider for getting all pools that exist on V3 from the Subgraph. The pools
    * from this provider are filtered during the algorithm to a set of candidate pools.
    */
@@ -229,11 +216,6 @@ export type AlphaRouterParams = {
   gasPriceProvider?: IGasPriceProvider;
   /**
    * A factory for generating a gas model that is used when estimating the gas used by
-   * V4 routes.
-   */
-  v4GasModelFactory?: IOnChainGasModelFactory<V4RouteWithValidQuote>;
-  /**
-   * A factory for generating a gas model that is used when estimating the gas used by
    * V3 routes.
    */
   v3GasModelFactory?: IOnChainGasModelFactory<V3RouteWithValidQuote>;
@@ -244,7 +226,7 @@ export type AlphaRouterParams = {
   v2GasModelFactory?: IV2GasModelFactory;
   /**
    * A factory for generating a gas model that is used when estimating the gas used by
-   * V3 routes.
+   * mixed routes.
    */
   mixedRouteGasModelFactory?: IOnChainGasModelFactory<MixedRouteWithValidQuote>;
   /**
@@ -293,11 +275,6 @@ export type AlphaRouterParams = {
    * All the supported v2 chains configuration
    */
   v2Supported?: ChainId[];
-
-  /**
-   * All the supported v4 chains configuration
-   */
-  v4Supported?: ChainId[];
 
   /**
    * The version of the universal router to use.
@@ -402,10 +379,6 @@ export type AlphaRouterConfig = {
    * Config for selecting which pools to consider routing via on V3.
    */
   v3PoolSelection: ProtocolPoolSelection;
-  /**
-   * Config for selecting which pools to consider routing via on V4.
-   */
-  v4PoolSelection: ProtocolPoolSelection;
   /**
    * For each route, the maximum number of hops to consider. More hops will increase latency of the algorithm.
    */
@@ -846,24 +819,6 @@ export class AlphaRouter
           new NodeJSCache(new NodeCache({ stdTTL: 300, useClones: false }))
         ),
         new StaticV3SubgraphProvider(chainId, this.v3PoolProvider),
-      ]);
-    }
-
-    if (v4SubgraphProvider) {
-      this.v4SubgraphProvider = v4SubgraphProvider;
-    } else {
-      this.v4SubgraphProvider = new V4SubgraphProviderWithFallBacks([
-        new CachingV4SubgraphProvider(
-          chainId,
-          new URISubgraphProvider(
-            chainId,
-            `https://cloudflare-ipfs.com/ipns/api.uniswap.org/v1/pools/v4/${chainName}.json`,
-            undefined,
-            0
-          ),
-          new NodeJSCache(new NodeCache({ stdTTL: 300, useClones: false }))
-        ),
-        new StaticV4SubgraphProvider(chainId, this.v4PoolProvider),
       ]);
     }
 
@@ -1407,7 +1362,6 @@ export class AlphaRouter
         tradeType,
         routingConfig,
         v3GasModel,
-        v4GasModel,
         mixedRouteGasModel,
         gasPriceWei,
         v2GasModel,
@@ -1932,7 +1886,7 @@ export class AlphaRouter
       this.portionProvider,
       v2GasModel,
       v3GasModel,
-      v4GasModel,
+      mixedRouteGasModel,
       swapConfig,
       providerConfig
     );
@@ -1947,7 +1901,6 @@ export class AlphaRouter
     tradeType: TradeType,
     routingConfig: AlphaRouterConfig,
     v3GasModel: IGasModel<V3RouteWithValidQuote>,
-    v4GasModel: IGasModel<V4RouteWithValidQuote>,
     mixedRouteGasModel: IGasModel<MixedRouteWithValidQuote>,
     gasPriceWei: BigNumber,
     v2GasModel?: IGasModel<V2RouteWithValidQuote>,
@@ -1979,49 +1932,18 @@ export class AlphaRouter
     );
 
     const noProtocolsSpecified = protocols.length === 0;
-    const v4ProtocolSpecified = protocols.includes(Protocol.V4);
     const v3ProtocolSpecified = protocols.includes(Protocol.V3);
     const v2ProtocolSpecified = protocols.includes(Protocol.V2);
     const v2SupportedInChain = this.v2Supported?.includes(this.chainId);
-    const v4SupportedInChain = this.v4Supported?.includes(this.chainId);
     const shouldQueryMixedProtocol =
       protocols.includes(Protocol.MIXED) ||
-      (noProtocolsSpecified && v2SupportedInChain && v4SupportedInChain);
+      (noProtocolsSpecified && v2SupportedInChain);
     const mixedProtocolAllowed =
       [ChainId.MAINNET, ChainId.SEPOLIA, ChainId.GOERLI].includes(
         this.chainId
       ) && tradeType === TradeType.EXACT_INPUT;
 
     const beforeGetCandidates = Date.now();
-
-    let v4CandidatePoolsPromise: Promise<V4CandidatePools | undefined> =
-      Promise.resolve(undefined);
-
-    // we are explicitly requiring people to specify v4 for now
-    if (
-      (v4SupportedInChain && (v4ProtocolSpecified || noProtocolsSpecified)) ||
-      (shouldQueryMixedProtocol && mixedProtocolAllowed)
-    ) {
-      // if (v4ProtocolSpecified || noProtocolsSpecified) {
-      v4CandidatePoolsPromise = getV4CandidatePools({
-        currencyIn: tokenIn,
-        currencyOut: tokenOut,
-        tokenProvider: this.tokenProvider,
-        blockedTokenListProvider: this.blockedTokenListProvider,
-        poolProvider: this.v4PoolProvider,
-        routeType: tradeType,
-        subgraphProvider: this.v4SubgraphProvider,
-        routingConfig,
-        chainId: this.chainId,
-      }).then((candidatePools) => {
-        metric.putMetric(
-          'GetV4CandidatePools',
-          Date.now() - beforeGetCandidates,
-          MetricLoggerUnit.Milliseconds
-        );
-        return candidatePools;
-      });
-    }
 
     let v3CandidatePoolsPromise: Promise<V3CandidatePools | undefined> =
       Promise.resolve(undefined);
@@ -2083,20 +2005,20 @@ export class AlphaRouter
 
     const quotePromises: Promise<GetQuotesResult>[] = [];
 
-    // for v4, for now we explicitly require people to specify
-    if (v4SupportedInChain && v4ProtocolSpecified) {
-      log.info({ protocols, tradeType }, 'Routing across V4');
+    // for v3, for now we explicitly require people to specify
+    if (v3ProtocolSpecified) {
+      log.info({ protocols, tradeType }, 'Routing across V3');
 
       metric.putMetric(
-        'SwapRouteFromChain_V4_GetRoutesThenQuotes_Request',
+        'SwapRouteFromChain_V3_GetRoutesThenQuotes_Request',
         1,
         MetricLoggerUnit.Count
       );
       const beforeGetRoutesThenQuotes = Date.now();
 
       quotePromises.push(
-        v4CandidatePoolsPromise.then((v4CandidatePools) =>
-          this.v4Quoter
+        v3CandidatePoolsPromise.then((v3CandidatePools) =>
+          this.v3Quoter
             .getRoutesThenQuotes(
               tokenIn,
               tokenOut,
@@ -2104,14 +2026,14 @@ export class AlphaRouter
               amounts,
               percents,
               quoteToken,
-              v4CandidatePools!,
+              v3CandidatePools!,
               tradeType,
               routingConfig,
               v3GasModel
             )
             .then((result) => {
               metric.putMetric(
-                `SwapRouteFromChain_V4_GetRoutesThenQuotes_Load`,
+                `SwapRouteFromChain_V3_GetRoutesThenQuotes_Load`,
                 Date.now() - beforeGetRoutesThenQuotes,
                 MetricLoggerUnit.Milliseconds
               );
@@ -2120,47 +2042,6 @@ export class AlphaRouter
             })
         )
       );
-    }
-
-    if (!fotInDirectSwap) {
-      // Maybe Quote V3 - if V3 is specified, or no protocol is specified
-      if (v3ProtocolSpecified || noProtocolsSpecified) {
-        log.info({ protocols, tradeType }, 'Routing across V3');
-
-        metric.putMetric(
-          'SwapRouteFromChain_V3_GetRoutesThenQuotes_Request',
-          1,
-          MetricLoggerUnit.Count
-        );
-        const beforeGetRoutesThenQuotes = Date.now();
-
-        quotePromises.push(
-          v3CandidatePoolsPromise.then((v3CandidatePools) =>
-            this.v3Quoter
-              .getRoutesThenQuotes(
-                tokenIn,
-                tokenOut,
-                amount,
-                amounts,
-                percents,
-                quoteToken,
-                v3CandidatePools!,
-                tradeType,
-                routingConfig,
-                v3GasModel
-              )
-              .then((result) => {
-                metric.putMetric(
-                  `SwapRouteFromChain_V3_GetRoutesThenQuotes_Load`,
-                  Date.now() - beforeGetRoutesThenQuotes,
-                  MetricLoggerUnit.Milliseconds
-                );
-
-                return result;
-              })
-          )
-        );
-      }
     }
 
     // Maybe Quote V2 - if V2 is specified, or no protocol is specified AND v2 is supported in this chain
@@ -2218,12 +2099,8 @@ export class AlphaRouter
         const beforeGetRoutesThenQuotes = Date.now();
 
         quotePromises.push(
-          Promise.all([
-            v4CandidatePoolsPromise,
-            v3CandidatePoolsPromise,
-            v2CandidatePoolsPromise,
-          ]).then(
-            async ([v4CandidatePools, v3CandidatePools, v2CandidatePools]) => {
+          Promise.all([v3CandidatePoolsPromise, v2CandidatePoolsPromise]).then(
+            async ([v3CandidatePools, v2CandidatePools]) => {
               const crossLiquidityPools =
                 await getMixedCrossLiquidityCandidatePools({
                   tokenIn,
@@ -2233,7 +2110,6 @@ export class AlphaRouter
                   v3SubgraphProvider: this.v3SubgraphProvider,
                   v2Candidates: v2CandidatePools,
                   v3Candidates: v3CandidatePools,
-                  v4Candidates: v4CandidatePools,
                 });
 
               return this.mixedQuoter
@@ -2244,12 +2120,7 @@ export class AlphaRouter
                   amounts,
                   percents,
                   quoteToken,
-                  [
-                    v4CandidatePools!,
-                    v3CandidatePools!,
-                    v2CandidatePools!,
-                    crossLiquidityPools,
-                  ],
+                  [v3CandidatePools!, v2CandidatePools!, crossLiquidityPools],
                   tradeType,
                   routingConfig,
                   mixedRouteGasModel
@@ -2296,7 +2167,7 @@ export class AlphaRouter
       this.portionProvider,
       v2GasModel,
       v3GasModel,
-      v4GasModel,
+      mixedRouteGasModel,
       swapConfig,
       providerConfig
     );
@@ -2448,17 +2319,6 @@ export class AlphaRouter
       providerConfig: providerConfig,
     });
 
-    const v4GasModelPromise = this.v4GasModelFactory.buildGasModel({
-      chainId: this.chainId,
-      gasPriceWei,
-      pools,
-      amountToken,
-      quoteToken,
-      v2poolProvider: this.v2PoolProvider,
-      l2GasDataProvider: this.l2GasDataProvider,
-      providerConfig: providerConfig,
-    });
-
     const mixedRouteGasModelPromise =
       this.mixedRouteGasModelFactory.buildGasModel({
         chainId: this.chainId,
@@ -2470,13 +2330,11 @@ export class AlphaRouter
         providerConfig: providerConfig,
       });
 
-    const [v2GasModel, v3GasModel, V4GasModel, mixedRouteGasModel] =
-      await Promise.all([
-        v2GasModelPromise,
-        v3GasModelPromise,
-        v4GasModelPromise,
-        mixedRouteGasModelPromise,
-      ]);
+    const [v2GasModel, v3GasModel, mixedRouteGasModel] = await Promise.all([
+      v2GasModelPromise,
+      v3GasModelPromise,
+      mixedRouteGasModelPromise,
+    ]);
 
     metric.putMetric(
       'GasModelCreation',
@@ -2487,7 +2345,6 @@ export class AlphaRouter
     return {
       v2GasModel: v2GasModel,
       v3GasModel: v3GasModel,
-      v4GasModel: V4GasModel,
       mixedRouteGasModel: mixedRouteGasModel,
     } as GasModelType;
   }

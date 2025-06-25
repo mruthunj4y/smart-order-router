@@ -1,11 +1,11 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { partitionMixedRouteByProtocol } from '@uniswap/router-sdk';
-import { ChainId } from '@uniswap/sdk-core';
-import { Pair } from '@uniswap/v2-sdk';
-import { Pool as V3Pool } from '@uniswap/v3-sdk';
+import { partitionMixedRouteByProtocol } from '@surge/router-sdk';
+import { ChainId } from '@surge/sdk-core';
+import { Pair } from '@surge/v2-sdk';
+import { Pool as V3Pool } from '@surge/v3-sdk';
 import JSBI from 'jsbi';
 
-import { TPool } from '@uniswap/router-sdk/dist/utils/TPool';
+import { TPool } from '@surge/router-sdk/dist/utils/TPool';
 import { WRAPPED_NATIVE_CURRENCY } from '../../../..';
 import { log } from '../../../../util';
 import { CurrencyAmount } from '../../../../util/amounts';
@@ -211,11 +211,7 @@ export class MixedRouteHeuristicGasModelFactory extends IOnChainGasModelFactory<
     const uninitializedTickGasUse = COST_PER_UNINIT_TICK.mul(0);
 
     if (false) {
-      // If the route contains a V4 pool, we know we are hitting mixed quoter V2, not mixed quoter V1,
-      // Hence we already know the v3 and v4 hops part of the quoter gas estimate.
-      // We only need to add the base gas use for the v2 part of the route,
-      // because mixed quoter doesn't have a way to estimate gas for v2 pools swaps.
-      baseGasUse = baseGasUseV2Only.add(routeWithValidQuote.quoterGasEstimate);
+      // Removed v4-related dead code
     } else {
       // base estimate gas used based on chainId estimates for hops and ticks gas useage
       baseGasUse = baseGasUse.add(tickGasUse).add(uninitializedTickGasUse);

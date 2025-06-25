@@ -6,9 +6,9 @@ import {
   encodeMixedRouteToPath,
   MixedRouteSDK,
   Protocol,
-} from '@uniswap/router-sdk';
-import { ChainId } from '@uniswap/sdk-core';
-import { encodeRouteToPath as encodeV3RouteToPath } from '@uniswap/v3-sdk';
+} from '@surge/router-sdk';
+import { ChainId } from '@surge/sdk-core';
+import { encodeRouteToPath as encodeV3RouteToPath } from '@surge/v3-sdk';
 import retry, { Options as RetryOptions } from 'async-retry';
 import _ from 'lodash';
 import stats from 'stats-lite';
@@ -36,7 +36,7 @@ import {
   DEFAULT_BLOCK_NUMBER_CONFIGS,
   DEFAULT_SUCCESS_RATE_FAILURE_OVERRIDES,
 } from '../util/onchainQuoteProviderConfigs';
-import { routeToString } from '../util/routes';
+import { routeToString, routeToPools } from '../util/routes';
 
 import { Result, SuccessResult } from './multicall-provider';
 import { UniswapMulticallProvider } from './multicall-uniswap-provider';
@@ -388,10 +388,10 @@ export class OnChainQuoteProvider implements IOnChainQuoteProvider {
       return quoterAddress;
     }
     const quoterAddress = useMixedRouteQuoter
-      ? false
-        ? MIXED_ROUTE_QUOTER_V2_ADDRESSES[this.chainId]
-        : MIXED_ROUTE_QUOTER_V1_ADDRESSES[this.chainId]
-      : protocol === Protocol.V3;
+      ? MIXED_ROUTE_QUOTER_V1_ADDRESSES[this.chainId]
+      : protocol === Protocol.V3
+      ? NEW_QUOTER_V2_ADDRESSES[this.chainId]
+      : undefined;
 
     if (!quoterAddress) {
       throw new Error(
@@ -440,12 +440,16 @@ export class OnChainQuoteProvider implements IOnChainQuoteProvider {
       // We don't have onchain V2 quoter, but we do have a mixed quoter that can quote against v2 routes onchain
       // Hence in case of V2 or mixed, we explicitly encode into mixed routes.
       case Protocol.V2:
-      case Protocol.MIXED:
+        // For V2Route, encodeMixedRouteToPath will handle the conversion, no need to access .pairs, .input, or .output here.
         return encodeMixedRouteToPath(
-          route instanceof V2Route
-            ? new MixedRouteSDK(route.pairs, route.input, route.output)
-            : route
+          new MixedRouteSDK(
+            route as V2Route,
+            (route as V2Route).input,
+            (route as V2Route).output
+          )
         ) as TPath;
+      case Protocol.MIXED:
+        return encodeMixedRouteToPath(route as MixedRoute) as TPath;
       default:
         throw new Error(
           `Unsupported protocol for the route: ${JSON.stringify(route)}`
@@ -485,19 +489,13 @@ export class OnChainQuoteProvider implements IOnChainQuoteProvider {
     results: Result<[BigNumber, BigNumber[], number[], BigNumber]>[];
     approxGasUsedPerSuccessCall: number;
   }> {
-    if (
-      (protocol === Protocol.MIXED && false) ||
-      protocol === Protocol.V4
-    ) {
+    if (protocol === Protocol.MIXED && false) {
       const mixedQuote =
         await this.multicall2Provider.callSameFunctionOnContractWithMultipleParams<
           [string, ExtraQuoteExactInputParams, string],
           [BigNumber, BigNumber] // amountIn/amountOut, gasEstimate
         >({
-          address: this.getQuoterAddress(
-            useMixedRouteQuoter,
-            protocol
-          ),
+          address: this.getQuoterAddress(useMixedRouteQuoter, protocol),
           contractInterface: this.getContractInterface(
             useMixedRouteQuoter,
             protocol
@@ -546,10 +544,7 @@ export class OnChainQuoteProvider implements IOnChainQuoteProvider {
         [string, string],
         [BigNumber, BigNumber[], number[], BigNumber] // amountIn/amountOut, sqrtPriceX96AfterList, initializedTicksCrossedList, gasEstimate
       >({
-        address: this.getQuoterAddress(
-          useMixedRouteQuoter,
-          protocol
-        ),
+        address: this.getQuoterAddress(useMixedRouteQuoter, protocol),
         contractInterface: this.getContractInterface(
           useMixedRouteQuoter,
           protocol
@@ -573,13 +568,6 @@ export class OnChainQuoteProvider implements IOnChainQuoteProvider {
     const useMixedRouteQuoter =
       routes.some((route) => route.protocol === Protocol.V2) ||
       routes.some((route) => route.protocol === Protocol.MIXED);
-    const mixedRouteContainsV4Pool = useMixedRouteQuoter
-      ? routes.some(
-          (route) =>
-            route.protocol === Protocol.MIXED &&
-            (route as MixedRoute).pools.some((pool) => pool instanceof V4Pool)
-        )
-      : false;
     const optimisticCachedRoutes =
       _providerConfig?.optimisticCachedRoutes ?? false;
 
@@ -609,23 +597,19 @@ export class OnChainQuoteProvider implements IOnChainQuoteProvider {
         const encodedRoute = this.encodeRouteToPath(route, functionName);
 
         const routeInputs: QuoteInputType[] = amounts.map((amount) => {
-          switch (route.protocol) 
+          switch (route.protocol) {
             case Protocol.MIXED:
-              if (mixedRouteContainsV4Pool) {
-                return [
-                  encodedRoute as string,
-                  {
-                    nonEncodableData: route.pools.map((_) => {
-                      return {
-                        hookData: '0x',
-                      };
-                    }) as NonEncodableData[],
-                  } as ExtraQuoteExactInputParams,
-                  amount.quotient.toString(),
-                ];
-              } else {
-                return [encodedRoute as string, amount.quotient.toString()];
-              }
+              return [
+                encodedRoute as string,
+                {
+                  nonEncodableData: routeToPools(route).map((_pool: any) => {
+                    return {
+                      hookData: '0x',
+                    };
+                  }) as NonEncodableData[],
+                } as ExtraQuoteExactInputParams,
+                amount.quotient.toString(),
+              ];
             default:
               return [
                 encodedRoute as string,

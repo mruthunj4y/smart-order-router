@@ -1,6 +1,6 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { ChainId, Token } from '@uniswap/sdk-core';
-import { computePoolAddress, FeeAmount, Pool } from '@uniswap/v3-sdk';
+import { ChainId, Token } from '@surge/sdk-core';
+import { computePoolAddress, FeeAmount, Pool } from '@surge/v3-sdk';
 import retry, { Options as RetryOptions } from 'async-retry';
 
 import { IUniswapV3PoolState__factory } from '../../types/v3/factories/IUniswapV3PoolState__factory';
@@ -79,7 +79,7 @@ export class V3PoolProvider
   private POOL_ADDRESS_CACHE: { [key: string]: string } = {};
 
   /**
-   * Creates an instance of V4PoolProvider.
+   * Creates an instance of V3PoolProvider.
    * @param chainId The chain id to use.
    * @param multicall2Provider The multicall provider to use to get the pools.
    * @param retryOptions The retry options for each call to the multicall.

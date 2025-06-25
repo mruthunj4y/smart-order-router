@@ -16,7 +16,7 @@
     "compile-v2-types": "npx typechain --target ethers-v5 --out-dir src/types/v2 './node_modules/@surge/?(v2-core|v2-periphery)/build/*UniswapV2*.json'",
     "compile-narwhal": "npx typechain --target ethers-v5 --out-dir src/types/other './node_modules/@surge/narwhal/artifacts/contracts/**/*.json'",
     "compile-external-types": "npx typechain --target ethers-v5 --out-dir src/types/other 'src/abis/**/*.json'",
-    "build": "run-p compile-v3-types compile-v2-types compile-narwhal compile-external-types && run-p build:*",
+    "build": "run-p compile-external-types && run-p build:*",
     "build:main": "tsc -p tsconfig.json",
     "build:module": "tsc -p tsconfig.module.json",
     "fix": "run-s fix:*",

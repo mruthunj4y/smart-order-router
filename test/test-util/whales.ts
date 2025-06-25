@@ -1,4 +1,4 @@
-import { ChainId, Currency, Ether } from '@uniswap/sdk-core';
+import { ChainId, Currency, Ether } from '@surge/sdk-core';
 import {
   CEUR_CELO,
   CEUR_CELO_ALFAJORES,
@@ -19,7 +19,7 @@ import {
   USDC_ZORA,
   USDT_MAINNET,
   WETH9,
-  WNATIVE_ON
+  WNATIVE_ON,
 } from '../../src';
 import { BULLET, BULLET_WITHOUT_TAX } from './mock-data';
 

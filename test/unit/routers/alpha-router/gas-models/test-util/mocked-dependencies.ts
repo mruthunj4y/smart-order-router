@@ -1,6 +1,6 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { Pair } from '@uniswap/v2-sdk';
-import { Pool as V3Pool } from '@uniswap/v3-sdk';
+import { Pair } from '@surge/v2-sdk';
+import { Pool as V3Pool } from '@surge/v3-sdk';
 import sinon from 'sinon';
 import {
   CurrencyAmount,
@@ -28,7 +28,7 @@ import {
   USDC_WETH_LOW,
   WBTC_WETH,
   WETH9_USDT_LOW,
-  WETH_USDT
+  WETH_USDT,
 } from '../../../../../test-util/mock-data';
 
 export function getMockedMixedGasModel(): IGasModel<MixedRouteWithValidQuote> {
@@ -74,7 +74,7 @@ export function getMockedV3PoolProvider(): V3PoolProvider {
     DAI_USDT_LOW,
     USDC_USDT_MEDIUM,
     UNI_WETH_MEDIUM,
-    DAI_WETH_MEDIUM
+    DAI_WETH_MEDIUM,
   ];
 
   mockV3PoolProvider.getPools.resolves(buildMockV3PoolAccessor(v3MockPools));
@@ -105,7 +105,14 @@ export function getMockedV2GasModel(): IGasModel<V2RouteWithValidQuote> {
 
 export function getMockedV2PoolProvider(): V2PoolProvider {
   const mockV2PoolProvider = sinon.createStubInstance(V2PoolProvider);
-  const v2MockPools: Pair[] = [DAI_USDT, USDC_WETH, WETH_USDT, USDC_DAI, WBTC_WETH, DAI_WETH];
+  const v2MockPools: Pair[] = [
+    DAI_USDT,
+    USDC_WETH,
+    WETH_USDT,
+    USDC_DAI,
+    WBTC_WETH,
+    DAI_WETH,
+  ];
   mockV2PoolProvider.getPools.resolves(buildMockV2PoolAccessor(v2MockPools));
   mockV2PoolProvider.getPoolAddress.callsFake((tA, tB) => ({
     poolAddress: Pair.getAddress(tA, tB),

@@ -1,6 +1,6 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { Protocol } from '@uniswap/router-sdk';
-import { ChainId, TradeType } from '@uniswap/sdk-core';
+import { Protocol } from '@surge/router-sdk';
+import { ChainId, TradeType } from '@surge/sdk-core';
 import JSBI from 'jsbi';
 import _ from 'lodash';
 import FixedReverseHeap from 'mnemonist/fixed-reverse-heap';
@@ -484,7 +484,7 @@ export async function getBestSwapRouteBy(
     // ROUTE-249: consoliate L1 + L2 gas fee adjustment within best-swap-route
     if (
       v2GasModel == undefined &&
-      v3GasModel == undefined &&
+      v3GasModel == undefined
     ) {
       throw new Error("Can't compute L1 gas fees.");
     } else {
@@ -585,49 +585,6 @@ export async function getBestSwapRouteBy(
             );
         }
       }
-      const v4Routes = bestSwap.filter(
-        (routes) => routes.protocol === Protocol.V4
-      );
-      if (v4Routes.length > 0 && V4_SUPPORTED.includes(chainId)) {
-        if (v4GasModel) {
-          gasCostsL1ToL2.gasUsedL1 = gasCostsL1ToL2.gasUsedL1.add(
-            v4GasCostL1.gasUsedL1
-          );
-          gasCostsL1ToL2.gasUsedL1OnL2 = gasCostsL1ToL2.gasUsedL1OnL2.add(
-            v4GasCostL1.gasUsedL1OnL2
-          );
-          if (
-            gasCostsL1ToL2.gasCostL1USD.currency.equals(
-              v4GasCostL1.gasCostL1USD.currency
-            )
-          ) {
-            gasCostsL1ToL2.gasCostL1USD = gasCostsL1ToL2.gasCostL1USD.add(
-              v4GasCostL1.gasCostL1USD
-            );
-          } else {
-            // This is to handle the case where gasCostsL1ToL2.gasCostL1USD and v4GasCostL1.gasCostL1USD have different currencies.
-            //
-            // gasCostsL1ToL2.gasCostL1USD was initially hardcoded to CurrencyAmount.fromRawAmount(usdGasTokensByChain[chainId]![0]!, 0)
-            // (https://github.com/Uniswap/smart-order-router/blob/main/src/routers/alpha-router/functions/best-swap-route.ts#L438)
-            // , where usdGasTokensByChain is coded in the descending order of decimals per chain,
-            // e.g. Arbitrum_one DAI (18 decimals), USDC bridged (6 decimals), USDC native (6 decimals)
-            // so gasCostsL1ToL2.gasCostL1USD will have DAI as currency.
-            //
-            // For v4GasCostL1.gasCostL1USD, it's calculated within getHighestLiquidityV3USDPool among usdGasTokensByChain[chainId]!,
-            // (https://github.com/Uniswap/smart-order-router/blob/1c93e133c46af545f8a3d8af7fca3f1f2dcf597d/src/util/gas-factory-helpers.ts#L110)
-            // , so the code will actually see which USD pool has the highest liquidity, if any.
-            // e.g. Arbitrum_one on v3 has highest liquidity on USDC native
-            // so v4GasCostL1.gasCostL1USD will have USDC native as currency.
-            //
-            // We will re-assign gasCostsL1ToL2.gasCostL1USD to v3GasCostL1.gasCostL1USD in this case.
-            gasCostsL1ToL2.gasCostL1USD = v4GasCostL1.gasCostL1USD;
-          }
-          gasCostsL1ToL2.gasCostL1QuoteToken =
-            gasCostsL1ToL2.gasCostL1QuoteToken.add(
-              v4GasCostL1.gasCostL1QuoteToken
-            );
-        }
-      }
     }
   }
 
@@ -650,8 +607,7 @@ export async function getBestSwapRouteBy(
       if (decimalsDiff < 0 && chainId === 324) {
         log.error(`Decimals diff is negative for ZkSync. This should not happen.
           usdTokenDecimals ${usdTokenDecimals} routeWithValidQuote.gasCostInUSD.currency.decimals
-          ${
-            routeWithValidQuote.gasCostInUSD.currency.decimals
+          ${routeWithValidQuote.gasCostInUSD.currency.decimals
           } ${JSON.stringify(routeWithValidQuote)}`);
       }
 

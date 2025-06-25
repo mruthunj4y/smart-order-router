@@ -1,7 +1,7 @@
 import { BigNumber } from '@ethersproject/bignumber';
 import { BaseProvider } from '@ethersproject/providers';
-import { ChainId, Price } from '@uniswap/sdk-core';
-import { Pool } from '@uniswap/v3-sdk';
+import { ChainId, Price } from '@surge/sdk-core';
+import { Pool } from '@surge/v3-sdk';
 import { CurrencyAmount, log, WRAPPED_NATIVE_CURRENCY } from '../../../util';
 import { calculateL1GasFeesHelper } from '../../../util/gas-factory-helpers';
 import { V3RouteWithValidQuote } from '../entities';
@@ -94,9 +94,8 @@ export abstract class TickBasedHeuristicGasModelFactory<
       );
 
       /** ------ MARK: USD logic  -------- */
-      // We only need to go through V2 and V3 USD pools for now,
-      // because v4 pools don't have deep liquidity yet.
-      // If one day, we see v3 usd pools have much deeper liquidity than v2/v3 usd pools, then we will add v4 pools for gas cost
+      // We only need to go through V2 and V3 USD pools for now.
+      // If one day, we see v3 usd pools have much deeper liquidity than v2/v3 usd pools, then we will add other pools for gas cost
       const gasCostInTermsOfUSD = getQuoteThroughNativePool(
         chainId,
         totalGasCostNativeCurrency,
@@ -109,9 +108,8 @@ export abstract class TickBasedHeuristicGasModelFactory<
       let gasCostInTermsOfGasToken: CurrencyAmount | undefined = undefined;
       // we don't want to fetch the gasToken pool if the gasToken is the native currency
       if (nativeAndSpecifiedGasTokenPool) {
-        // We only need to go through V2 and V3 USD pools for now,
-        // because v4 pools don't have deep liquidity yet.
-        // If one day, we see v3 usd pools have much deeper liquidity than v2/v3 usd pools, then we will add v4 pools for gas cost
+        // We only need to go through V2 and V3 USD pools for now.
+        // If one day, we see v3 usd pools have much deeper liquidity than v2/v3 usd pools, then we will add other pools for gas cost
         gasCostInTermsOfGasToken = getQuoteThroughNativePool(
           chainId,
           totalGasCostNativeCurrency,
@@ -142,9 +140,8 @@ export abstract class TickBasedHeuristicGasModelFactory<
 
       let gasCostInTermsOfQuoteToken: CurrencyAmount | null = null;
       if (nativeAndQuoteTokenPool) {
-        // We only need to go through V2 and V3 USD pools for now,
-        // because v4 pools don't have deep liquidity yet.
-        // If one day, we see v3 usd pools have much deeper liquidity than v2/v3 usd pools, then we will add v4 pools for gas cost
+        // We only need to go through V2 and V3 USD pools for now.
+        // If one day, we see v3 usd pools have much deeper liquidity than v2/v3 usd pools, then we will add other pools for gas cost
         gasCostInTermsOfQuoteToken = getQuoteThroughNativePool(
           chainId,
           totalGasCostNativeCurrency,
@@ -158,7 +155,7 @@ export abstract class TickBasedHeuristicGasModelFactory<
         );
       }
 
-      /** ------ MARK: (V3 and V4 ONLY) Logic for calculating synthetic gas cost in terms of amount token -------- */
+      /** ------ MARK: (V3 ONLY) Logic for calculating synthetic gas cost in terms of amount token -------- */
       // TODO: evaluate effectiveness and potentially refactor
 
       // Highest liquidity pool for the non quote token / ETH
@@ -290,7 +287,7 @@ export abstract class TickBasedHeuristicGasModelFactory<
     /*
     // Eventually we can just use the quoter gas estimate for the base gas use
     // It will be more accurate than doing the offchain gas estimate like below
-    // It will become more critical when we are going to support v4 hookful routing,
+    // It will become more critical when we are going to support hookful routing,
     // where we have no idea how much gas the hook(s) will cost.
     // const baseGasUse = routeWithValidQuote.quoterGasEstimate
     */

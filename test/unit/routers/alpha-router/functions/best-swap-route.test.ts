@@ -1,7 +1,7 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { ChainId, Fraction, TradeType } from '@uniswap/sdk-core';
-import { Pair } from '@uniswap/v2-sdk';
-import { Pool } from '@uniswap/v3-sdk';
+import { ChainId, Fraction, TradeType } from '@surge/sdk-core';
+import { Pair } from '@surge/v2-sdk';
+import { Pool } from '@surge/v3-sdk';
 import JSBI from 'jsbi';
 import _ from 'lodash';
 import sinon from 'sinon';
@@ -18,7 +18,10 @@ import {
   V3RouteWithValidQuote,
   WRAPPED_NATIVE_CURRENCY,
 } from '../../../../../src';
-import { IPortionProvider, PortionProvider } from '../../../../../src/providers/portion-provider';
+import {
+  IPortionProvider,
+  PortionProvider,
+} from '../../../../../src/providers/portion-provider';
 import { V2PoolProvider } from '../../../../../src/providers/v2/pool-provider';
 import { getBestSwapRoute } from '../../../../../src/routers/alpha-router/functions/best-swap-route';
 import {

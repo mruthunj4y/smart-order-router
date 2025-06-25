@@ -3,8 +3,8 @@ import {
   ChainId,
   Currency,
   CurrencyAmount as CurrencyAmountRaw,
-} from '@uniswap/sdk-core';
-import { FeeAmount } from '@uniswap/v3-sdk';
+} from '@surge/sdk-core';
+import { FeeAmount } from '@surge/v3-sdk';
 import JSBI from 'jsbi';
 
 export class CurrencyAmount extends CurrencyAmountRaw<Currency> {}

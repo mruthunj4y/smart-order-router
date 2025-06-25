@@ -1,5 +1,5 @@
-import { Protocol } from '@uniswap/router-sdk';
-import { ChainId } from '@uniswap/sdk-core';
+import { Protocol } from '@surge/router-sdk';
+import { ChainId } from '@surge/sdk-core';
 
 import { CachingSubgraphProvider } from '../caching-subgraph-provider';
 

@@ -1,17 +1,12 @@
-import { TPool } from '@uniswap/router-sdk/dist/utils/TPool';
-import { Currency, Token } from '@uniswap/sdk-core';
-import { Pair } from '@uniswap/v2-sdk';
-import { Pool as V3Pool } from '@uniswap/v3-sdk';
+import { TPool } from '@surge/router-sdk/dist/utils/TPool';
+import { Currency, Token } from '@surge/sdk-core';
+import { Pair } from '@surge/v2-sdk';
+import { Pool as V3Pool } from '@surge/v3-sdk';
 
 import { getAddressLowerCase } from '../../../util';
 import { log } from '../../../util/log';
 import { poolToString, routeToString } from '../../../util/routes';
-import {
-  MixedRoute,
-  SupportedRoutes,
-  V2Route,
-  V3Route,
-} from '../../router';
+import { MixedRoute, SupportedRoutes, V2Route, V3Route } from '../../router';
 
 export function computeAllV3Routes(
   tokenIn: Token,
@@ -61,14 +56,11 @@ export function computeAllMixedRoutes(
     (route: TPool[], currencyIn: Currency, currencyOut: Currency) => {
       return new MixedRoute(route, currencyIn, currencyOut);
     },
-    (pool: TPool, currency: Currency) =>
-      currency.isNative
-        ? (pool as V4Pool).involvesToken(currency)
-        : pool.involvesToken(currency),
+    (pool: TPool, currency: Currency) => pool.involvesToken(currency),
     parts,
     maxHops
   );
-  /// filter out pure v4 and v3 and v2 routes
+  // filter out pure v3 and v2 routes
   return routesRaw.filter((route) => {
     return (
       !route.pools.every((pool) => pool instanceof V3Pool) &&
@@ -132,7 +124,7 @@ export function computeAllRoutes<
         ? curPool.token1
         : curPool.token0;
 
-      // TODO: ROUTE-217 - Support native currency routing in V4
+      // TODO: ROUTE-217 - Support native currency routing
       if (tokensVisited.has(getAddressLowerCase(currentTokenOut))) {
         continue;
       }

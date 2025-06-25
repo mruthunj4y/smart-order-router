@@ -1,4 +1,4 @@
-import { ChainId } from '@uniswap/sdk-core';
+import { ChainId } from '@surge/sdk-core';
 
 import {
   BatchParams,

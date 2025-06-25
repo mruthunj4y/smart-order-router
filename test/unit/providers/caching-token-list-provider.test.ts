@@ -1,4 +1,4 @@
-import { ChainId, Token } from '@uniswap/sdk-core';
+import { ChainId, Token } from '@surge/sdk-core';
 import _ from 'lodash';
 import sinon from 'sinon';
 import {

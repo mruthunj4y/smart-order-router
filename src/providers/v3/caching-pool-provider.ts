@@ -1,5 +1,5 @@
-import { ChainId, Token } from '@uniswap/sdk-core';
-import { FeeAmount, Pool } from '@uniswap/v3-sdk';
+import { ChainId, Token } from '@surge/sdk-core';
+import { FeeAmount, Pool } from '@surge/v3-sdk';
 import _ from 'lodash';
 
 import { metric, MetricLoggerUnit } from '../../util';

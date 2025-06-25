@@ -1,6 +1,6 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { ChainId, Currency } from '@uniswap/sdk-core';
-import { Pool as V3Pool } from '@uniswap/v3-sdk';
+import { ChainId, Currency } from '@surge/sdk-core';
+import { Pool as V3Pool } from '@surge/v3-sdk';
 import { Options as RetryOptions } from 'async-retry';
 import _ from 'lodash';
 

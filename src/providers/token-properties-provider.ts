@@ -1,5 +1,5 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { ChainId, Currency } from '@uniswap/sdk-core';
+import { ChainId, Currency } from '@surge/sdk-core';
 
 import { getAddressLowerCase, log, metric, MetricLoggerUnit } from '../util';
 
