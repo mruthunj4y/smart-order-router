@@ -1,0 +1,13 @@
+import { Currency } from '@surge/sdk-core';
+import { Pair } from '@surge/v2-sdk';
+import { Pool as V3Pool } from '@surge/v3-sdk';
+import { CachedRoutes } from '../providers';
+import { AlphaRouterConfig, RouteWithValidQuote } from '../routers/alpha-router';
+import { SupportedRoutes } from '../routers/router';
+export type TPool = V3Pool | Pair;
+export declare const routeToTokens: (route: SupportedRoutes) => Currency[];
+export declare const routeToPools: (route: SupportedRoutes) => TPool[];
+export declare const poolToString: (pool: TPool) => string;
+export declare const routeToString: (route: SupportedRoutes) => string;
+export declare const routeAmountsToString: (routeAmounts: RouteWithValidQuote[]) => string;
+export declare function shouldWipeoutCachedRoutes(cachedRoutes?: CachedRoutes, routingConfig?: AlphaRouterConfig): boolean;
