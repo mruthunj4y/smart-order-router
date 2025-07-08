@@ -16,7 +16,8 @@
     "compile-v2-types": "npx typechain --target ethers-v5 --out-dir src/types/v2 './node_modules/@surge/?(v2-core|v2-periphery)/build/*UniswapV2*.json'",
     "compile-narwhal": "npx typechain --target ethers-v5 --out-dir src/types/other './node_modules/@surge/narwhal/artifacts/contracts/**/*.json'",
     "compile-external-types": "npx typechain --target ethers-v5 --out-dir src/types/other 'src/abis/**/*.json'",
-    "build": "run-p compile-external-types && run-p build:*",
+    "copy-types": "cp -R src/types build/module/types && cp -R src/types build/main/types",
+    "build": "run-p compile-external-types && run-p build:* && yarn copy-types",
     "build:main": "tsc -p tsconfig.json",
     "build:module": "tsc -p tsconfig.module.json",
     "fix": "run-s fix:*",
@@ -104,6 +105,7 @@
   "files": [
     "build/main",
     "build/module",
+    "src/types",
     "!**/*.spec.*",
     "!**/*.json",
     "CHANGELOG.md",
