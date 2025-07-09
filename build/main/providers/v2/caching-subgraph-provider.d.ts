@@ -1,6 +1,6 @@
 import { ChainId } from '@surge/sdk-core';
 import { CachingSubgraphProvider } from '../caching-subgraph-provider';
-import { ICache } from './../cache';
+import { ICache } from '../cache';
 import { IV2SubgraphProvider, V2SubgraphPool } from './subgraph-provider';
 /**
  * Provider for getting V2 pools, with functionality for caching the results.

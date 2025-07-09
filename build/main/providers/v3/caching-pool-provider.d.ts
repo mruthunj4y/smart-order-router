@@ -1,7 +1,7 @@
 import { ChainId, Token } from '@surge/sdk-core';
 import { FeeAmount, Pool } from '@surge/v3-sdk';
-import { ICache } from './../cache';
-import { ProviderConfig } from './../provider';
+import { ICache } from '../cache';
+import { ProviderConfig } from '../provider';
 import { IV3PoolProvider, V3PoolAccessor } from './pool-provider';
 /**
  * Provider for getting V3 pools, with functionality for caching the results.
