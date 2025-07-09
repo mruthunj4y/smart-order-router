@@ -6,7 +6,7 @@ import { CurrencyAmount } from '../../../util/amounts';
 import { SwapOptions } from '../../router';
 import { AlphaRouterConfig } from '../alpha-router';
 import { IGasModel } from '../gas-models';
-import { RouteWithValidQuote, V2RouteWithValidQuote, V3RouteWithValidQuote } from './../entities/route-with-valid-quote';
+import { RouteWithValidQuote, V2RouteWithValidQuote, V3RouteWithValidQuote } from '../entities/route-with-valid-quote';
 export type BestSwapRoute = {
     quote: CurrencyAmount;
     quoteGasAdjusted: CurrencyAmount;

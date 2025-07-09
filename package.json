@@ -16,8 +16,7 @@
     "compile-v2-types": "npx typechain --target ethers-v5 --out-dir src/types/v2 './node_modules/@surge/?(v2-core|v2-periphery)/build/*UniswapV2*.json'",
     "compile-narwhal": "npx typechain --target ethers-v5 --out-dir src/types/other './node_modules/@surge/narwhal/artifacts/contracts/**/*.json'",
     "compile-external-types": "npx typechain --target ethers-v5 --out-dir src/types/other 'src/abis/**/*.json'",
-    "copy-types": "cp -R src/types build/module/types && cp -R src/types build/main/types",
-    "build": "run-p compile-external-types && run-p build:* && yarn copy-types",
+    "build": "run-p compile-external-types && run-p build:*",
     "build:main": "tsc -p tsconfig.json",
     "build:module": "tsc -p tsconfig.module.json",
     "fix": "run-s fix:*",
@@ -26,7 +25,8 @@
     "prepare-release": "run-s cov:check doc:html version doc:publish",
     "test": "jest test/unit",
     "integ-test": "TS_NODE=true jest test/integ --testRunner='jest-circus/runner'",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postbuild": "cp -r src/types build/types && cp -r src/types build/module/types"
   },
   "engines": {
     "node": ">=10"
@@ -41,6 +41,8 @@
     "@surge/universal-router-sdk": "https://github.com/mruthunj4y/universal-router-sdk.git#build",
     "@surge/v2-sdk": "https://github.com/mruthunj4y/v2-sdk.git#build",
     "@surge/v3-sdk": "https://github.com/mruthunj4y/v3-sdk.git#build",
+        "@surge/surge-core": "https://github.com/mruthunj4y/surge-core.git#build",
+    "@surge/v3-periphery": "https://github.com/mruthunj4y/v3-periphery.git#main",
     "async-retry": "^1.3.1",
     "await-timeout": "^1.1.1",
     "axios": "^0.21.1",
@@ -60,8 +62,6 @@
     "@nomiclabs/hardhat-ethers": "^2.0.6",
     "@oclif/command": "^1.8.0",
     "@oclif/errors": "^1.3.5",
-    "@surge/surge-core": "https://github.com/mruthunj4y/surge-core.git#build",
-    "@surge/v3-periphery": "https://github.com/mruthunj4y/v3-periphery.git#main",
     "@typechain/ethers-v5": "^7.0.1",
     "@types/async-retry": "^1.4.4",
     "@types/await-timeout": "^0.3.1",
