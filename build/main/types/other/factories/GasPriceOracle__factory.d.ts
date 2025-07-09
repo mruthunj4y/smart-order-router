@@ -1,7 +1,7 @@
-import { Signer } from "ethers";
 import { Provider } from "@ethersproject/providers";
-import type { TokenFeeDetector, TokenFeeDetectorInterface } from "../TokenFeeDetector";
-export declare class TokenFeeDetector__factory {
+import { Signer } from "ethers";
+import type { GasPriceOracle, GasPriceOracleInterface } from "../GasPriceOracle";
+export declare class GasPriceOracle__factory {
     static readonly abi: ({
         inputs: {
             internalType: string;
@@ -10,10 +10,13 @@ export declare class TokenFeeDetector__factory {
         }[];
         stateMutability: string;
         type: string;
+        anonymous?: undefined;
         name?: undefined;
         outputs?: undefined;
     } | {
+        anonymous: boolean;
         inputs: {
+            indexed: boolean;
             internalType: string;
             name: string;
             type: string;
@@ -30,18 +33,14 @@ export declare class TokenFeeDetector__factory {
         }[];
         name: string;
         outputs: {
-            components: {
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
             internalType: string;
             name: string;
             type: string;
         }[];
         stateMutability: string;
         type: string;
+        anonymous?: undefined;
     })[];
-    static createInterface(): TokenFeeDetectorInterface;
-    static connect(address: string, signerOrProvider: Signer | Provider): TokenFeeDetector;
+    static createInterface(): GasPriceOracleInterface;
+    static connect(address: string, signerOrProvider: Signer | Provider): GasPriceOracle;
 }

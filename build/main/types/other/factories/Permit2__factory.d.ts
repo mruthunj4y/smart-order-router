@@ -1,8 +1,8 @@
-import { Signer, ContractFactory, Overrides } from "ethers";
 import { Provider, TransactionRequest } from "@ethersproject/providers";
+import { ContractFactory, Overrides, Signer } from "ethers";
 import type { Permit2, Permit2Interface } from "../Permit2";
 export declare class Permit2__factory extends ContractFactory {
-    constructor(...args: [signer: Signer] | ConstructorParameters<typeof ContractFactory>);
+    constructor(signer?: Signer);
     deploy(overrides?: Overrides & {
         from?: string | Promise<string>;
     }): Promise<Permit2>;

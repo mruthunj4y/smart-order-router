@@ -1,7 +1,7 @@
 import { ChainId, Token } from '@surge/sdk-core';
 import { Pair } from '@surge/v2-sdk';
-import { ICache } from '../cache';
-import { ProviderConfig } from '../provider';
+import { ICache } from './../cache';
+import { ProviderConfig } from './../provider';
 import { IV2PoolProvider, V2PoolAccessor } from './pool-provider';
 /**
  * Provider for getting V2 pools, with functionality for caching the results per block.

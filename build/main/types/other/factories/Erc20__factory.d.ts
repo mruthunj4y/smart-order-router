@@ -1,5 +1,5 @@
-import { Signer } from "ethers";
 import { Provider } from "@ethersproject/providers";
+import { Signer } from "ethers";
 import type { Erc20, Erc20Interface } from "../Erc20";
 export declare class Erc20__factory {
     static readonly abi: ({
