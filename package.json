@@ -32,7 +32,6 @@
     "node": ">=10"
   },
   "dependencies": {
-    "@eth-optimism/sdk": "^3.2.2",
     "@surge/permit2-sdk": "https://github.com/mruthunj4y/permit-sdk.git#build",
     "@surge/router-sdk": "https://github.com/mruthunj4y/router-sdk.git#build",
     "@surge/sdk-core": "https://github.com/mruthunj4y/sdk-core.git#build",
@@ -47,7 +46,6 @@
     "await-timeout": "^1.1.1",
     "axios": "^0.21.1",
     "bunyan": "^1.8.15",
-    "bunyan-blackhole": "^1.1.1",
     "ethers": "^5.7.2",
     "graphql": "^15.5.0",
     "graphql-request": "^3.4.0",
@@ -66,7 +64,6 @@
     "@types/async-retry": "^1.4.4",
     "@types/await-timeout": "^0.3.1",
     "@types/bunyan": "^1.8.6",
-    "@types/bunyan-blackhole": "^0.2.2",
     "@types/jest": "^27.0.0",
     "@types/jest-sinon": "^1.0.2",
     "@types/lodash": "^4.14.168",
